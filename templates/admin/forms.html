@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}表单管理 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2 class="mb-1">表单管理</h2>
+                    <p class="text-muted mb-0">管理所有表单的创建、编辑和分发</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_create_form') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>创建新表单
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 表单列表 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-list me-2"></i>表单列表 ({{ forms|length }})
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if forms %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">ID</th>
+                                <th style="width: 25%;">表单名称</th>
+                                <th style="width: 15%;">创建时间</th>
+                                <th style="width: 10%;">状态</th>
+                                <th style="width: 10%;">提交数</th>
+                                <th style="width: 20%;">分享链接</th>
+                                <th style="width: 15%;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in forms %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark">#{{ form.id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-alt text-primary me-2"></i>
+                                        <div>
+                                            <strong>{{ form.title }}</strong>
+                                            {% if form.description %}
+                                                <br><small class="text-muted">{{ form.description[:80] }}{% if form.description|length > 80 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ form.created_at | local_time }}</span>
+                                    {% if form.updated_at != form.created_at %}
+                                        <br><small class="text-muted">更新: {{ form.updated_at | local_time_short }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" 
+                                               {% if form.is_active %}checked{% endif %}
+                                               onchange="toggleFormStatus({{ form.id }}, this)">
+                                        <label class="form-check-label">
+                                            <span class="status-text">
+                                                {% if form.is_active %}启用{% else %}禁用{% endif %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('admin_form_submissions', form_id=form.id) }}" 
+                                       class="badge bg-info text-decoration-none">
+                                        {{ form.submissions|length }} 条
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" 
+                                               value="{{ request.url_root }}form/{{ form.id }}" 
+                                               readonly id="url_{{ form.id }}">
+                                        <button class="btn btn-outline-secondary" type="button" 
+                                                onclick="copyUrl({{ form.id }})" title="复制链接">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('view_form', form_id=form.id) }}" 
+                                           class="btn btn-outline-success" title="预览表单" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin_edit_form', form_id=form.id) }}" 
+                                           class="btn btn-outline-primary" title="编辑表单">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('admin_form_submissions', form_id=form.id) }}" 
+                                           class="btn btn-outline-info" title="查看提交">
+                                            <i class="fas fa-list"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="deleteForm({{ form.id }}, '{{ form.title }}')" 
+                                                title="删除表单">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="text-muted mt-3">暂无表单</h5>
+                    <p class="text-muted">开始创建您的第一个表单来收集信息</p>
+                    <a href="{{ url_for('admin_create_form') }}" class="btn btn-primary mt-2">
+                        <i class="fas fa-plus me-2"></i>创建表单
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除表单 "<span id="deleteFormTitle"></span>" 吗？</p>
+                <p class="text-danger"><strong>警告：</strong>删除后将无法恢复，相关的提交数据也将被删除。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.input-group-sm .form-control {
+    font-size: 0.75rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.copy-feedback {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+</style>
+
+<script>
+// 切换表单状态
+function toggleFormStatus(formId, checkbox) {
+    fetch(`/api/forms/${formId}/toggle`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const statusText = checkbox.closest('td').querySelector('.status-text');
+            statusText.textContent = data.is_active ? '启用' : '禁用';
+            
+            // 显示成功提示
+            showToast('表单状态已更新', 'success');
+        } else {
+            // 恢复开关状态
+            checkbox.checked = !checkbox.checked;
+            showToast('更新失败，请重试', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        checkbox.checked = !checkbox.checked;
+        showToast('更新失败，请重试', 'error');
+    });
+}
+
+// 复制链接
+function copyUrl(formId) {
+    const urlInput = document.getElementById(`url_${formId}`);
+    urlInput.select();
+    urlInput.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        showToast('链接已复制到剪贴板', 'success');
+    } catch (err) {
+        console.error('复制失败:', err);
+        showToast('复制失败，请手动复制', 'error');
+    }
+}
+
+// 删除表单
+function deleteForm(formId, formTitle) {
+    document.getElementById('deleteFormTitle').textContent = formTitle;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+    
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+        // 显示加载状态
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>删除中...';
+        btn.disabled = true;
+        
+        // 发送删除请求
+        fetch(`/admin/forms/${formId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('表单删除成功', 'success');
+                modal.hide();
+                // 刷新页面或移除表单行
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                throw new Error(data.error || '删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast(error.message || '删除失败，请重试', 'error');
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    };
+}
+
+// 显示提示消息
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} copy-feedback alert-dismissible fade show`;
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %}

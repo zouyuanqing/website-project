@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}支付页面 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 页面标题 -->
+            <div class="text-center mb-4">
+                <h2 class="mb-2">
+                    <i class="fas fa-credit-card text-primary me-2"></i>完成支付
+                </h2>
+                <p class="text-muted">表单提交成功，请完成以下支付项目</p>
+            </div>
+
+            <!-- 表单信息 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>{{ submission.form.title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>提交者：</strong>{{ submission.user.name }}</p>
+                            <p class="mb-1"><strong>提交时间：</strong>{{ submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>提交编号：</strong>#{{ submission.id }}</p>
+                            <p class="mb-1"><strong>支付项目：</strong>{{ payment_orders|length }} 项</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 支付订单列表 -->
+            {% for order in payment_orders %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                {% if order.payment_type == 'wechat_pay' %}
+                                    <div class="payment-icon me-3">
+                                        <i class="fab fa-weixin text-success" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">微信支付</h5>
+                                        <p class="text-muted mb-0">{{ order.field_name }}</p>
+                                    </div>
+                                {% else %}
+                                    <div class="payment-icon me-3">
+                                        <i class="fab fa-alipay text-primary" style="font-size: 2.5rem;"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">支付宝支付</h5>
+                                        <p class="text-muted mb-0">{{ order.field_name }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="payment-amount">
+                                <h3 class="text-danger mb-0">¥{{ "%.2f"|format(order.amount) }}</h3>
+                                <small class="text-muted">订单号：{{ order.order_no }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-end">
+                            {% if order.payment_type == 'wechat_pay' %}
+                                <a href="{{ url_for('process_payment', order_id=order.id, payment_method='wechat') }}" 
+                                   class="btn btn-success btn-lg payment-btn">
+                                    <i class="fab fa-weixin me-2"></i>微信支付
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('process_payment', order_id=order.id, payment_method='alipay') }}" 
+                                   class="btn btn-primary btn-lg payment-btn">
+                                    <i class="fab fa-alipay me-2"></i>支付宝支付
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 收款账户信息 -->
+                    {% if order.payment_account %}
+                    <div class="row mt-3 pt-3 border-top">
+                        <div class="col-12">
+                            <div class="payment-account-info">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-university me-2"></i>收款账户信息
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="account-detail">
+                                            <span class="detail-label">账户名称：</span>
+                                            <span class="detail-value">{{ order.payment_account.account_name }}</span>
+                                        </div>
+                                        <div class="account-detail">
+                                            <span class="detail-label">账户类型：</span>
+                                            <span class="detail-value">
+                                                {% if order.payment_account.account_type == 'wechat_pay' %}
+                                                    <i class="fab fa-weixin text-success me-1"></i>微信
+                                                {% elif order.payment_account.account_type == 'alipay' %}
+                                                    <i class="fab fa-alipay text-primary me-1"></i>支付宝
+                                                {% elif order.payment_account.account_type == 'bank_card' %}
+                                                    <i class="fas fa-credit-card text-info me-1"></i>银行卡
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="account-detail">
+                                            <span class="detail-label">账户号码：</span>
+                                            <span class="detail-value">{{ order.payment_account.account_number }}</span>
+                                        </div>
+                                        <div class="account-detail">
+                                            <span class="detail-label">账户持有人：</span>
+                                            <span class="detail-value">{{ order.payment_account.account_holder }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if order.payment_account.bank_name %}
+                                <div class="account-detail mt-2">
+                                    <span class="detail-label">开户银行：</span>
+                                    <span class="detail-value">{{ order.payment_account.bank_name }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- 支付配置提示（开发环境） -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>开发环境提示
+                </h6>
+                <p class="mb-2">当前为开发测试环境，支付接口使用沙箱模式。</p>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-info">🐛 测试环境说明：</h6>
+                        <ul class="small mb-0">
+                            <li>使用沙箱环境，不会真实扣款</li>
+                            <li>可使用测试账号进行支付测试</li>
+                            <li>所有交易都是虚拟的</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-warning">⚠️ 生产环境配置：</h6>
+                        <ul class="small mb-0">
+                            <li>需要配置真实的商户号和密钥</li>
+                            <li>更新.env文件中的支付配置</li>
+                            <li>设置正确的回调地址</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 总金额 -->
+            {% set total_amount = payment_orders|sum(attribute='amount') %}
+            <div class="card border-0 shadow-sm mb-4 bg-light">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calculator me-2"></i>支付总金额
+                            </h5>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h3 class="text-danger mb-0">¥{{ "%.2f"|format(total_amount) }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="text-center">
+                <a href="{{ url_for('view_submission', submission_id=submission.id) }}" 
+                   class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-eye me-2"></i>查看提交详情
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home me-2"></i>返回首页
+                </a>
+            </div>
+
+            <!-- 支付说明 -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>支付说明
+                </h6>
+                <ul class="mb-0">
+                    <li>点击对应的支付按钮完成付款</li>
+                    <li>支付完成后系统会自动更新订单状态</li>
+                    <li>如遇支付问题，请联系客服处理</li>
+                    <li>订单支付期限为24小时，请及时完成支付</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-icon {
+    flex-shrink: 0;
+}
+
+.payment-amount {
+    border-left: 3px solid #dc3545;
+    padding-left: 1rem;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 25px rgba(0,0,0,0.1) !important;
+}
+
+.btn-lg {
+    border-radius: 50px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.alert {
+    border-radius: 15px;
+}
+
+/* 收款账户信息样式 */
+.payment-account-info {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.account-detail {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #6c757d;
+    display: inline-block;
+    min-width: 80px;
+}
+
+.detail-value {
+    color: #495057;
+    font-weight: 500;
+}
+
+.payment-account-info h6 {
+    color: #495057;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+</style>
+
+<script>
+// 支付按钮点击效果
+document.querySelectorAll('.payment-btn').forEach(function(button) {
+    button.addEventListener('click', function(e) {
+        // 添加加载状态
+        const original = this.innerHTML;
+        const paymentType = this.href.includes('wechat') ? '微信支付' : '支付宝支付';
+        
+        this.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>正在创建${paymentType}订单...`;
+        this.classList.add('disabled');
+        
+        // 如果超时10秒没有响应，恢复按钮
+        setTimeout(() => {
+            if (this.classList.contains('disabled')) {
+                this.innerHTML = original;
+                this.classList.remove('disabled');
+            }
+        }, 10000);
+    });
+});
+
+// 兼容旧的按钮选择器
+document.querySelectorAll('a[href*="process_payment"]').forEach(function(button) {
+    if (!button.classList.contains('payment-btn')) {
+        button.addEventListener('click', function(e) {
+            const original = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>处理中...';
+            this.classList.add('disabled');
+            
+            setTimeout(() => {
+                if (this.classList.contains('disabled')) {
+                    this.innerHTML = original;
+                    this.classList.remove('disabled');
+                }
+            }, 10000);
+        });
+    }
+});
+
+// 页面初始化时检查支付状态
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('支付页面已加载，准备处理支付');
+});
+</script>
+{% endblock %}

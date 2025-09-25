@@ -1,0 +1,742 @@
+{% extends "base.html" %}
+
+{% block title %}系统管理 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center page-header">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="mb-1 fw-bold">
+                        <i class="fas fa-cogs me-2 text-primary"></i>系统管理
+                    </h2>
+                    <p class="text-muted mb-0">系统设置和维护工具</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统信息 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info mb-2">
+                        <i class="fas fa-server text-white"></i>
+                    </div>
+                    <h5 class="fw-bold text-info">{{ system_stats.database_size }}</h5>
+                    <p class="text-muted mb-0">数据库大小</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning mb-2">
+                        <i class="fas fa-files text-white"></i>
+                    </div>
+                    <h5 class="fw-bold text-warning">{{ system_stats.total_files }}</h5>
+                    <p class="text-muted mb-0">上传文件数</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success mb-2">
+                        <i class="fas fa-clock text-white"></i>
+                    </div>
+                    <h5 class="fw-bold text-success">{{ system_stats.uptime }}</h5>
+                    <p class="text-muted mb-0">系统运行时间</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-secondary mb-2">
+                        <i class="fas fa-download text-white"></i>
+                    </div>
+                    <h5 class="fw-bold text-secondary">无备份</h5>
+                    <p class="text-muted mb-0">最后备份时间</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 常规管理工具 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-tools me-2"></i>管理工具
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row tools-grid">
+                        <div class="col-md-4 mb-3">
+                            <div class="tool-item p-3 bg-light rounded h-100 d-flex flex-column">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-chart-bar text-primary me-3" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mb-0 fw-bold">系统统计</h6>
+                                </div>
+                                <p class="text-muted mb-3 small flex-grow-1">查看详细的系统使用统计数据</p>
+                                <div class="mt-auto">
+                                    <button class="btn btn-outline-primary btn-sm w-100" onclick="showSystemStatistics()">
+                                        <i class="fas fa-eye me-1"></i>查看统计
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="tool-item p-3 bg-light rounded h-100 d-flex flex-column">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-file-export text-success me-3" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mb-0 fw-bold">数据导出</h6>
+                                </div>
+                                <p class="text-muted mb-3 small flex-grow-1">批量导出系统数据和报表</p>
+                                <div class="mt-auto">
+                                    <button class="btn btn-outline-success btn-sm w-100" data-bs-toggle="modal" data-bs-target="#systemExportModal">
+                                        <i class="fas fa-download me-1"></i>导出数据
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="tool-item p-3 bg-light rounded h-100 d-flex flex-column">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-shield-alt text-info me-3" style="font-size: 1.5rem;"></i>
+                                    <h6 class="mb-0 fw-bold">安全检查</h6>
+                                </div>
+                                <p class="text-muted mb-3 small flex-grow-1">运行系统安全扫描和检查</p>
+                                <div class="mt-auto">
+                                    <button class="btn btn-outline-info btn-sm w-100" onclick="runSecurityCheck()">
+                                        <i class="fas fa-search me-1"></i>安全扫描
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的高级工具区域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-exclamation-triangle me-2"></i>高级管理工具
+                        </h6>
+                        <button class="btn btn-dark btn-sm fw-bold" onclick="toggleAdvancedTools()">
+                            <i class="fas fa-eye me-1"></i>显示工具
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" id="advancedTools" style="display: none;">
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-warning me-2"></i>警告
+                        </h6>
+                        <p class="mb-0">以下工具仅供有经验的管理员使用，请谨慎操作！</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="tool-item p-4 border rounded h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-save text-warning me-3" style="font-size: 1.8rem;"></i>
+                                    <h6 class="mb-0 fw-bold">数据备份</h6>
+                                </div>
+                                <p class="text-muted mb-3 small">创建完整的系统数据备份</p>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#backupModal">
+                                        <i class="fas fa-save me-2"></i>创建备份
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="showBackupList()">
+                                        <i class="fas fa-list me-1"></i>备份列表
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="tool-item p-4 border border-danger rounded h-100">
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="fas fa-database text-danger me-3" style="font-size: 1.8rem;"></i>
+                                    <h6 class="mb-0 fw-bold text-danger">数据库管理</h6>
+                                </div>
+                                <p class="text-muted mb-3 small">危险操作：清空或重置数据库</p>
+                                <button class="btn btn-outline-danger btn-sm" onclick="showDatabaseTools()">
+                                    <i class="fas fa-cog me-2"></i>数据库工具
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据库工具区域（默认隐藏） -->
+                    <div id="databaseTools" style="display: none;" class="mt-3">
+                        <div class="alert alert-danger">
+                            <h6 class="alert-heading text-danger">
+                                <i class="fas fa-skull-crossbones me-2"></i>危险区域
+                            </h6>
+                            <p class="mb-3">以下操作将对数据库进行不可逆的修改，请确保您明白这些操作的后果！</p>
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('admin_clear_database') }}" 
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirmDangerousAction('清空数据库')">
+                                    <i class="fas fa-trash-alt me-2"></i>清空数据库
+                                </a>
+                                
+                                <button class="btn btn-outline-secondary btn-sm" onclick="hideDatabaseTools()">
+                                    <i class="fas fa-times me-1"></i>取消
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作日志 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-list me-2"></i>最近操作日志
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt text-muted" style="font-size: 3rem;"></i>
+                        <h6 class="text-muted mt-3">暂无操作日志</h6>
+                        <p class="text-muted">系统操作日志将在此显示</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 统计卡片图标样式 */
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto;
+}
+
+/* 工具项悬停效果 */
+.tool-item {
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+}
+
+.tool-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #dee2e6;
+}
+
+/* 卡片悬停效果 */
+.card {
+    transition: transform 0.2s ease;
+    border: 1px solid #e9ecef;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* 按钮样式修复 */
+.btn {
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* 警告区域样式 */
+.alert-warning {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+}
+
+.alert-danger {
+    border-left: 4px solid #dc3545;
+    background-color: #f8d7da;
+}
+
+/* 高级工具区域样式 */
+#advancedTools {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#databaseTools {
+    animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 200px;
+    }
+}
+
+/* 系统信息卡片 */
+.card-body .stat-icon {
+    margin-bottom: 1rem;
+}
+
+.card-body h5 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .tool-item {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon {
+        font-size: 1.2rem;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .card-body h5 {
+        font-size: 1.1rem;
+    }
+}
+
+/* 表格样式修复 */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+}
+
+/* 页面标题样式 */
+.page-header {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* 工具网格布局 */
+.tools-grid {
+    gap: 1rem;
+}
+
+.tools-grid .col-md-4 {
+    display: flex;
+}
+
+.tools-grid .tool-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 按钮组样式 */
+.d-flex.gap-2 > * {
+    margin-right: 0.5rem;
+}
+
+.d-flex.gap-2 > *:last-child {
+    margin-right: 0;
+}
+
+/* 图标颜色修复 */
+.text-primary { color: #0d6efd !important; }
+.text-success { color: #198754 !important; }
+.text-warning { color: #ffc107 !important; }
+.text-danger { color: #dc3545 !important; }
+.text-info { color: #0dcaf0 !important; }
+.text-secondary { color: #6c757d !important; }
+
+/* 背景颜色修复 */
+.bg-primary { background-color: #0d6efd !important; }
+.bg-success { background-color: #198754 !important; }
+.bg-warning { background-color: #ffc107 !important; }
+.bg-danger { background-color: #dc3545 !important; }
+.bg-info { background-color: #0dcaf0 !important; }
+.bg-secondary { background-color: #6c757d !important; }
+</style>
+
+<script>
+function toggleAdvancedTools() {
+    const tools = document.getElementById('advancedTools');
+    const button = event.target.closest('button');
+    
+    if (tools.style.display === 'none' || tools.style.display === '') {
+        tools.style.display = 'block';
+        button.innerHTML = '<i class="fas fa-eye-slash me-1"></i>隐藏工具';
+    } else {
+        tools.style.display = 'none';
+        button.innerHTML = '<i class="fas fa-eye me-1"></i>显示工具';
+        // 同时隐藏数据库工具
+        const dbTools = document.getElementById('databaseTools');
+        if (dbTools) {
+            dbTools.style.display = 'none';
+        }
+    }
+}
+
+function showDatabaseTools() {
+    const dbTools = document.getElementById('databaseTools');
+    if (confirm('您确定要访问数据库管理工具吗？这些是危险操作！')) {
+        dbTools.style.display = 'block';
+        // 滚动到数据库工具区域
+        dbTools.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+function hideDatabaseTools() {
+    const dbTools = document.getElementById('databaseTools');
+    dbTools.style.display = 'none';
+}
+
+function confirmDangerousAction(action) {
+    return confirm(`⚠️ 危险操作确认 ⚠️
+
+您即将执行：${action}
+
+这是一个不可逆的危险操作，请确认您明白后果。
+
+确定要继续吗？`);
+}
+
+// 页面加载完成后初始化
+ document.addEventListener('DOMContentLoaded', function() {
+    // 确保高级工具初始状态为隐藏
+    const advancedTools = document.getElementById('advancedTools');
+    const databaseTools = document.getElementById('databaseTools');
+    
+    if (advancedTools) {
+        advancedTools.style.display = 'none';
+    }
+    if (databaseTools) {
+        databaseTools.style.display = 'none';
+    }
+    
+    // 添加卡片悬停效果
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+
+// 系统统计显示函数
+function showSystemStatistics() {
+    const modal = new bootstrap.Modal(document.getElementById('systemStatsModal'));
+    modal.show();
+    
+    fetch('/admin/system/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySystemStatistics(data.statistics);
+            } else {
+                throw new Error(data.error || '获取统计数据失败');
+            }
+        })
+        .catch(error => {
+            document.getElementById('systemStatsContent').innerHTML = 
+                `<div class="alert alert-danger">加载统计数据失败：${error.message}</div>`;
+        });
+}
+
+function displaySystemStatistics(stats) {
+    const content = `
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-users me-2"></i>用户统计</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <h4 class="text-primary">${stats.users.total}</h4>
+                                <small class="text-muted">总用户数</small>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h4 class="text-success">${stats.users.active}</h4>
+                                <small class="text-muted">活跃用户</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>表单统计</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <h4 class="text-primary">${stats.forms.total}</h4>
+                                <small class="text-muted">总表单数</small>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <h4 class="text-success">${stats.forms.active}</h4>
+                                <small class="text-muted">启用表单</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('systemStatsContent').innerHTML = content;
+}
+
+// 系统导出函数
+function startSystemExport() {
+    const exportType = document.getElementById('exportType').value;
+    const format = document.querySelector('input[name="format"]:checked').value;
+    
+    const params = new URLSearchParams({ type: exportType, format: format });
+    const exportUrl = `/admin/system/export?${params.toString()}`;
+    
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('systemExportModal'));
+    if (modal) modal.hide();
+    
+    showToast('导出开始下载，请稍候...', 'success');
+}
+
+// 安全检查函数
+function runSecurityCheck() {
+    const modal = new bootstrap.Modal(document.getElementById('securityCheckModal'));
+    modal.show();
+    
+    fetch('/admin/system/security-check')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySecurityCheckResults(data.security_check);
+            } else {
+                throw new Error(data.error || '安全检查失败');
+            }
+        })
+        .catch(error => {
+            document.getElementById('securityCheckContent').innerHTML = 
+                `<div class="alert alert-danger">安全检查失败：${error.message}</div>`;
+        });
+}
+
+function displaySecurityCheckResults(checkResult) {
+    let statusClass = checkResult.status === 'critical' ? 'danger' : 
+                     checkResult.status === 'warning' ? 'warning' : 'success';
+    
+    let content = `
+        <div class="text-center mb-4">
+            <h2 class="text-${statusClass}">${checkResult.score}</h2>
+            <p>安全评分</p>
+        </div>
+    `;
+    
+    if (checkResult.issues && checkResult.issues.length > 0) {
+        content += '<h6 class="text-danger">安全问题</h6><div class="list-group mb-3">';
+        checkResult.issues.forEach(issue => {
+            content += `<div class="list-group-item list-group-item-danger">
+                <h6>${issue.title}</h6>
+                <p>${issue.description}</p>
+                <small>解决方案：${issue.solution}</small>
+            </div>`;
+        });
+        content += '</div>';
+    }
+    
+    document.getElementById('securityCheckContent').innerHTML = content;
+}
+
+// 创建备份函数
+function createSystemBackup() {
+    const data = {
+        include_database: document.getElementById('includeDatabase').checked,
+        include_uploads: document.getElementById('includeUploads').checked,
+        include_config: document.getElementById('includeConfig').checked
+    };
+    
+    fetch('/admin/system/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('backupModal'));
+            if (modal) modal.hide();
+        } else {
+            throw new Error(data.error || '备份创建失败');
+        }
+    })
+    .catch(error => showToast(error.message, 'error'));
+}
+
+// 显示备份列表
+function showBackupList() {
+    const modal = new bootstrap.Modal(document.getElementById('backupListModal'));
+    modal.show();
+    
+    fetch('/admin/system/backups')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayBackupList(data.backups);
+            } else {
+                throw new Error(data.error || '获取备份列表失败');
+            }
+        })
+        .catch(error => {
+            document.getElementById('backupListContent').innerHTML = 
+                `<div class="alert alert-danger">获取备份列表失败：${error.message}</div>`;
+        });
+}
+
+function displayBackupList(backups) {
+    if (backups.length === 0) {
+        document.getElementById('backupListContent').innerHTML = 
+            '<div class="text-center py-4"><h6 class="text-muted">暂无备份文件</h6></div>';
+        return;
+    }
+    
+    let content = '<div class="table-responsive"><table class="table table-hover">';
+    content += '<thead><tr><th>文件名</th><th>大小</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+    
+    backups.forEach(backup => {
+        content += `<tr>
+            <td>${backup.filename}</td>
+            <td>${backup.size_mb} MB</td>
+            <td>${backup.created_at_formatted}</td>
+            <td>
+                <a href="/admin/system/backup/download/${backup.filename}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteBackup('${backup.filename}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    content += '</tbody></table></div>';
+    document.getElementById('backupListContent').innerHTML = content;
+}
+
+// Toast 提示函数
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1055; min-width: 300px;';
+    toast.innerHTML = `${message}<button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>`;
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentElement) toast.remove(); }, 5000);
+}
+
+// 删除备份文件函数
+function deleteBackup(filename) {
+    if (!confirm(`确定要删除备份文件 "${filename}" 吗？此操作不可恢复！`)) {
+        return;
+    }
+    
+    fetch(`/admin/system/backup/delete/${filename}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('备份文件删除成功', 'success');
+            // 重新加载备份列表内容（不重新打开模态框）
+            fetch('/admin/system/backups')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayBackupList(data.backups);
+                    } else {
+                        throw new Error(data.error || '获取备份列表失败');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('backupListContent').innerHTML = 
+                        `<div class="alert alert-danger">获取备份列表失败：${error.message}</div>`;
+                });
+        } else {
+            throw new Error(data.error || '删除失败');
+        }
+    })
+    .catch(error => {
+        showToast(`删除失败: ${error.message}`, 'error');
+    });
+}
+</script>
+{% endblock %}
+
+<!-- 包含所有系统管理模态框 -->
+{% include 'admin/system_modals.html' %}

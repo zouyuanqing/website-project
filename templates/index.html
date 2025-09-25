@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-gradient-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">信息收集系统</h1>
+                <p class="lead mb-4">
+                    安全、便捷、高效的在线信息收集平台<br>
+                    支持多种表单类型，文件上传，数据统计分析
+                </p>
+                <div class="d-flex gap-3">
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>立即注册
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>用户登录
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-lg">
+                            <i class="fas fa-tachometer-alt me-2"></i>进入面板
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="fas fa-clipboard-list display-1 opacity-75"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <!-- 功能特色 -->
+    <div class="row mb-5">
+        <div class="col-12 text-center mb-5">
+            <h2 class="fw-bold">系统特色</h2>
+            <p class="text-muted">为您提供全面的信息收集解决方案</p>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-primary text-white rounded-circle mx-auto mb-3">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <h5 class="fw-bold">灵活表单设计</h5>
+                    <p class="text-muted">支持多种字段类型，拖拽式表单设计，满足各种信息收集需求</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-success text-white rounded-circle mx-auto mb-3">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h5 class="fw-bold">文件上传支持</h5>
+                    <p class="text-muted">支持图片、视频、文档等多种文件格式上传，安全可靠</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon bg-info text-white rounded-circle mx-auto mb-3">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h5 class="fw-bold">数据统计分析</h5>
+                    <p class="text-muted">实时数据统计，可视化报表，帮助您更好地了解收集情况</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 使用流程 -->
+    <div class="row">
+        <div class="col-12 text-center mb-5">
+            <h2 class="fw-bold">使用流程</h2>
+            <p class="text-muted">简单三步，轻松完成信息收集</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle mx-auto mb-3">1</div>
+            <h5 class="fw-bold">创建表单</h5>
+            <p class="text-muted">管理员登录后台，创建自定义表单，设置字段和规则</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle mx-auto mb-3">2</div>
+            <h5 class="fw-bold">分发链接</h5>
+            <p class="text-muted">将表单链接分享给需要填写的用户，支持多种分享方式</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="step-number bg-primary text-white rounded-circle mx-auto mb-3">3</div>
+            <h5 class="fw-bold">收集分析</h5>
+            <p class="text-muted">用户填写提交后，系统自动收集整理，支持数据导出</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.step-number {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.card {
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+</style>
+{% endblock %}

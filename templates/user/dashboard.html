@@ -1,0 +1,754 @@
+{% extends "base.html" %}
+
+{% block title %}我的面板 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle text-primary me-3" style="font-size: 2.5rem;"></i>
+                <div>
+                    <h2 class="mb-1">欢迎回来，{{ current_user.name }}！</h2>
+                    <p class="text-muted mb-0">
+                        {% if current_user.email %}
+                            <i class="fas fa-envelope me-1"></i>{{ current_user.email }}
+                        {% endif %}
+                        {% if current_user.phone %}
+                            <i class="fas fa-phone me-1 ms-3"></i>{{ current_user.phone }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-primary">
+                            <i class="fas fa-file-alt text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-primary">{{ submissions|length }}</h4>
+                    <p class="text-muted mb-0">已提交表单</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-success">
+                            <i class="fas fa-check-circle text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-success">
+                        {{ submissions|selectattr('status', 'equalto', 'approved')|list|length }}
+                    </h4>
+                    <p class="text-muted mb-0">已通过审核</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-warning">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-warning">
+                        {{ submissions|selectattr('status', 'equalto', 'submitted')|list|length }}
+                    </h4>
+                    <p class="text-muted mb-0">待审核</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-info">
+                            <i class="fas fa-credit-card text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-info">{{ payment_stats.total_payments }}</h4>
+                    <p class="text-muted mb-0">支付订单</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 支付统计卡片 -->
+    {% if payment_stats.total_payments > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-success">
+                            <i class="fas fa-check-double text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-success">{{ payment_stats.paid_orders }}</h4>
+                    <p class="text-muted mb-0">已支付</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-warning">
+                            <i class="fas fa-clock text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-warning">{{ payment_stats.pending_payments }}</h4>
+                    <p class="text-muted mb-0">待支付</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-danger">
+                            <i class="fas fa-yen-sign text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-danger">¥{{ "%.2f"|format(payment_stats.total_paid_amount) }}</h4>
+                    <p class="text-muted mb-0">已支付金额</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="stat-icon bg-secondary">
+                            <i class="fas fa-chart-pie text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-secondary">{{ payment_stats.wechat_payments + payment_stats.alipay_payments }}</h4>
+                    <p class="text-muted mb-0">支付方式</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 个人中心功能区域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-user-cog me-2"></i>个人中心功能
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- 表单管理 -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="function-item h-100">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-list-alt text-primary" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">可用表单</h6>
+                                        <p class="text-muted mb-0 small">查看和填写可用的表单</p>
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('available_forms') }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 支付管理 -->
+                        {% if payment_stats.total_payments > 0 %}
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="function-item h-100">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-credit-card text-success" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">我的支付</h6>
+                                        <p class="text-muted mb-0 small">查看支付记录和订单状态</p>
+                                    </div>
+                                    <div>
+                                        <a href="#paymentModal" class="btn btn-outline-success btn-sm" data-bs-toggle="modal">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- 收款账户信息 -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="function-item h-100">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-university text-info" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">收款信息</h6>
+                                        <p class="text-muted mb-0 small">查看支付相关的收款账户</p>
+                                    </div>
+                                    <div>
+                                        <a href="#accountModal" class="btn btn-outline-info btn-sm" data-bs-toggle="modal">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 个人设置 -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="function-item h-100">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-user-edit text-warning" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">个人设置</h6>
+                                        <p class="text-muted mb-0 small">修改个人信息和密码</p>
+                                    </div>
+                                    <div>
+                                        <a href="#profileModal" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 帮助中心 -->
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <div class="function-item h-100">
+                                <div class="d-flex align-items-center p-3 bg-light rounded">
+                                    <div class="me-3">
+                                        <i class="fas fa-question-circle text-secondary" style="font-size: 2rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">帮助中心</h6>
+                                        <p class="text-muted mb-0 small">查看使用说明和常见问题</p>
+                                    </div>
+                                    <div>
+                                        <a href="#helpModal" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交记录 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-history me-2"></i>我的提交记录
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>表单名称</th>
+                                <th>提交时间</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-alt text-primary me-2"></i>
+                                        <strong>{{ submission.form.title }}</strong>
+                                    </div>
+                                    {% if submission.form.description %}
+                                        <small class="text-muted">{{ submission.form.description[:100] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-muted">
+                                        {{ submission.submitted_at | local_time }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if submission.status == 'submitted' %}
+                                        <span class="badge bg-warning">待审核</span>
+                                    {% elif submission.status == 'approved' %}
+                                        <span class="badge bg-success">已通过</span>
+                                    {% elif submission.status == 'rejected' %}
+                                        <span class="badge bg-danger">已拒绝</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ submission.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('view_submission', submission_id=submission.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>查看详情
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="text-muted mt-3">暂无提交记录</h5>
+                    <p class="text-muted">当您填写并提交表单后，记录将在这里显示</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.card {
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+
+<!-- 支付管理模态框 -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-credit-card me-2"></i>我的支付记录
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 支付统计概览 -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-2">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-primary mb-1">{{ payment_stats.total_payments }}</h4>
+                            <small class="text-muted">总订单数</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-success mb-1">{{ payment_stats.paid_orders }}</h4>
+                            <small class="text-muted">已支付</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-warning mb-1">{{ payment_stats.pending_payments }}</h4>
+                            <small class="text-muted">待支付</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-danger mb-1">¥{{ "%.2f"|format(payment_stats.total_paid_amount) }}</h4>
+                            <small class="text-muted">已支付金额</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 支付记录列表 -->
+                {% if payment_orders and payment_orders|length > 0 %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>订单号</th>
+                                <th>表单</th>
+                                <th>金额</th>
+                                <th>支付方式</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in payment_orders[:10] %}
+                            <tr>
+                                <td>
+                                    <code class="small">{{ order.order_no }}</code>
+                                </td>
+                                <td>
+                                    <strong>{{ order.submission.form.title }}</strong>
+                                    <br><small class="text-muted">{{ order.field_name }}</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-danger">¥{{ "%.2f"|format(order.amount) }}</span>
+                                </td>
+                                <td>
+                                    {% if order.payment_type == 'wechat_pay' %}
+                                        <span class="badge bg-success"><i class="fab fa-weixin"></i> 微信支付</span>
+                                    {% elif order.payment_type == 'alipay' %}
+                                        <span class="badge bg-primary"><i class="fab fa-alipay"></i> 支付宝</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ order.payment_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.status == 'paid' %}
+                                        <span class="badge bg-success">已支付</span>
+                                    {% elif order.status == 'pending' %}
+                                        <span class="badge bg-warning">待支付</span>
+                                    {% elif order.status == 'processing' %}
+                                        <span class="badge bg-info">处理中</span>
+                                    {% elif order.status == 'failed' %}
+                                        <span class="badge bg-danger">支付失败</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ order.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ order.created_at | local_time_short }}</small>
+                                </td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <a href="{{ url_for('payment_page', submission_id=order.submission_id) }}" 
+                                           class="btn btn-sm btn-outline-primary">去支付</a>
+                                    {% elif order.status == 'paid' %}
+                                        <a href="{{ url_for('payment_success', order_id=order.id) }}" 
+                                           class="btn btn-sm btn-outline-success">查看</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-credit-card text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">暂无支付记录</h5>
+                    <p class="text-muted mb-0">当您提交包含支付字段的表单后，支付记录将在这里显示</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                {% if payment_orders and payment_orders|length > 10 %}
+                <a href="{{ url_for('user_payment_history') }}" class="btn btn-primary">查看全部记录</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 收款账户信息模态框 -->
+<div class="modal fade" id="accountModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-university me-2"></i>收款账户信息
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    以下是系统中配置的收款账户信息，您可以了解支付款项的去向。
+                </div>
+                
+                <!-- 动态加载收款账户信息 -->
+                <div id="accountInfoContainer">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="text-muted mt-2">正在加载账户信息...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 个人设置模态框 -->
+<div class="modal fade" id="profileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>个人设置
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="profileForm">
+                    <div class="mb-3">
+                        <label for="userName" class="form-label">姓名</label>
+                        <input type="text" class="form-control" id="userName" value="{{ current_user.name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="userEmail" value="{{ current_user.email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="userPhone" class="form-label">手机号</label>
+                        <input type="tel" class="form-control" id="userPhone" value="{{ current_user.phone or '' }}">
+                    </div>
+                    <hr>
+                    <h6 class="mb-3">修改密码</h6>
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">当前密码</label>
+                        <input type="password" class="form-control" id="currentPassword">
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirmPassword">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="updateProfile()">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 帮助中心模态框 -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle me-2"></i>帮助中心
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="helpAccordion">
+                    <!-- 常见问题 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="faqHeading">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faqCollapse">
+                                <i class="fas fa-question me-2"></i>常见问题
+                            </button>
+                        </h2>
+                        <div id="faqCollapse" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <div class="mb-3">
+                                    <h6>Q: 如何提交表单？</h6>
+                                    <p class="text-muted mb-0">A: 在"可用表单"中选择需要填写的表单，完整填写所有必填项后提交即可。</p>
+                                </div>
+                                <div class="mb-3">
+                                    <h6>Q: 支付失败怎么办？</h6>
+                                    <p class="text-muted mb-0">A: 可以在"我的支付"中重新进行支付，或联系管理员处理。</p>
+                                </div>
+                                <div class="mb-3">
+                                    <h6>Q: 如何查看提交状态？</h6>
+                                    <p class="text-muted mb-0">A: 在"我的提交记录"中可以查看所有表单的提交状态和审核结果。</p>
+                                </div>
+                                <div class="mb-3">
+                                    <h6>Q: 忘记密码怎么办？</h6>
+                                    <p class="text-muted mb-0">A: 请联系系统管理员重置密码。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 使用指南 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="guideHeading">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guideCollapse">
+                                <i class="fas fa-book me-2"></i>使用指南
+                            </button>
+                        </h2>
+                        <div id="guideCollapse" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ol>
+                                    <li class="mb-2">注册并登录系统</li>
+                                    <li class="mb-2">在个人中心查看可用表单</li>
+                                    <li class="mb-2">选择需要填写的表单并完整填写</li>
+                                    <li class="mb-2">如有支付项目，完成相应支付</li>
+                                    <li class="mb-2">在个人中心查看提交状态和支付记录</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 联系我们 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="contactHeading">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#contactCollapse">
+                                <i class="fas fa-envelope me-2"></i>联系我们
+                            </button>
+                        </h2>
+                        <div id="contactCollapse" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <p>如果您遇到技术问题或需要帮助，请通过以下方式联系我们：</p>
+                                <ul>
+                                    <li>系统管理员邮箱：admin@example.com</li>
+                                    <li>技术支持电话：400-000-0000</li>
+                                    <li>工作时间：周一至周五 9:00-18:00</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 加载收款账户信息
+document.getElementById('accountModal').addEventListener('show.bs.modal', function () {
+    fetch('/admin/api/payment-accounts')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('accountInfoContainer');
+            if (data.success && data.accounts && data.accounts.length > 0) {
+                let html = '<div class="row">';
+                data.accounts.forEach(account => {
+                    let iconClass = 'fas fa-university';
+                    let bgClass = 'bg-primary';
+                    
+                    if (account.account_type === 'wechat_pay') {
+                        iconClass = 'fab fa-weixin';
+                        bgClass = 'bg-success';
+                    } else if (account.account_type === 'alipay') {
+                        iconClass = 'fab fa-alipay';
+                        bgClass = 'bg-info';
+                    }
+                    
+                    html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <div class="rounded-circle ${bgClass} d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                <i class="${iconClass} text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1">${account.account_name}</h6>
+                                            <small class="text-muted">${account.get_account_display}</small>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0">账户持有人：${account.account_holder}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-university text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">暂无收款账户</h5>
+                        <p class="text-muted mb-0">系统暂未配置收款账户信息</p>
+                    </div>`;
+            }
+        })
+        .catch(error => {
+            console.error('加载收款账户失败:', error);
+            document.getElementById('accountInfoContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    加载收款账户信息失败，请稍后重试。
+                </div>`;
+        });
+});
+
+// 更新个人资料
+function updateProfile() {
+    const formData = {
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        phone: document.getElementById('userPhone').value,
+        current_password: document.getElementById('currentPassword').value,
+        new_password: document.getElementById('newPassword').value,
+        confirm_password: document.getElementById('confirmPassword').value
+    };
+    
+    // 验证密码
+    if (formData.new_password && formData.new_password !== formData.confirm_password) {
+        alert('新密码和确认密码不一致！');
+        return;
+    }
+    
+    // 这里可以添加AJAX请求来更新用户信息
+    fetch('/api/user/profile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('个人信息更新成功！');
+            location.reload(); // 刷新页面
+        } else {
+            alert('更新失败：' + (data.message || '未知错误'));
+        }
+    })
+    .catch(error => {
+        console.error('更新失败:', error);
+        alert('个人信息更新功能暂时不可用，请稍后重试。');
+    });
+}
+</script>
+
+{% endblock %}

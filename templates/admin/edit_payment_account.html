@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}编辑收款账户 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('admin_payment_accounts') }}" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="mb-1">编辑收款账户</h2>
+                    <p class="text-muted mb-0">修改 {{ account.account_name }} 的信息</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form method="POST" id="editAccountForm">
+                <!-- 基本信息 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>基本信息
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="account_name" class="form-label fw-bold">账户名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg" id="account_name" 
+                                       name="account_name" value="{{ account.account_name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">账户类型</label>
+                                <div class="form-control form-control-lg d-flex align-items-center">
+                                    {% if account.account_type == 'wechat_pay' %}
+                                        <i class="fab fa-weixin text-success me-2"></i>微信收款
+                                    {% elif account.account_type == 'alipay' %}
+                                        <i class="fab fa-alipay text-primary me-2"></i>支付宝收款
+                                    {% elif account.account_type == 'bank_card' %}
+                                        <i class="fas fa-credit-card text-info me-2"></i>银行卡
+                                    {% endif %}
+                                </div>
+                                <div class="form-text">账户类型创建后不可修改</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="account_holder" class="form-label fw-bold">收款人姓名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg" id="account_holder" 
+                                       name="account_holder" value="{{ account.account_holder }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">账户状态</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="is_active" 
+                                           name="is_active" {% if account.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        启用此收款账户
+                                    </label>
+                                </div>
+                                <div class="form-text">禁用后用户无法选择此账户进行支付</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账户信息 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>账户信息
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label for="account_number" class="form-label fw-bold">
+                                {% if account.account_type == 'wechat_pay' %}
+                                    微信号/手机号
+                                {% elif account.account_type == 'alipay' %}
+                                    支付宝账号
+                                {% elif account.account_type == 'bank_card' %}
+                                    银行卡号
+                                {% endif %}
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="account_number" 
+                                   name="account_number" value="{{ account.account_number }}" required>
+                        </div>
+                        
+                        {% if account.account_type == 'bank_card' %}
+                        <!-- 银行卡专用字段 -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="bank_name" class="form-label fw-bold">银行名称 <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-lg" id="bank_name" name="bank_name" required>
+                                    <option value="">请选择银行</option>
+                                    <option value="中国工商银行" {% if account.bank_name == '中国工商银行' %}selected{% endif %}>中国工商银行</option>
+                                    <option value="中国建设银行" {% if account.bank_name == '中国建设银行' %}selected{% endif %}>中国建设银行</option>
+                                    <option value="中国农业银行" {% if account.bank_name == '中国农业银行' %}selected{% endif %}>中国农业银行</option>
+                                    <option value="中国银行" {% if account.bank_name == '中国银行' %}selected{% endif %}>中国银行</option>
+                                    <option value="交通银行" {% if account.bank_name == '交通银行' %}selected{% endif %}>交通银行</option>
+                                    <option value="招商银行" {% if account.bank_name == '招商银行' %}selected{% endif %}>招商银行</option>
+                                    <option value="中信银行" {% if account.bank_name == '中信银行' %}selected{% endif %}>中信银行</option>
+                                    <option value="光大银行" {% if account.bank_name == '光大银行' %}selected{% endif %}>光大银行</option>
+                                    <option value="华夏银行" {% if account.bank_name == '华夏银行' %}selected{% endif %}>华夏银行</option>
+                                    <option value="民生银行" {% if account.bank_name == '民生银行' %}selected{% endif %}>民生银行</option>
+                                    <option value="广发银行" {% if account.bank_name == '广发银行' %}selected{% endif %}>广发银行</option>
+                                    <option value="平安银行" {% if account.bank_name == '平安银行' %}selected{% endif %}>平安银行</option>
+                                    <option value="浦发银行" {% if account.bank_name == '浦发银行' %}selected{% endif %}>浦发银行</option>
+                                    <option value="兴业银行" {% if account.bank_name == '兴业银行' %}selected{% endif %}>兴业银行</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="bank_branch" class="form-label fw-bold">开户行</label>
+                                <input type="text" class="form-control form-control-lg" id="bank_branch" 
+                                       name="bank_branch" value="{{ account.bank_branch or '' }}">
+                                <div class="form-text">可选，建议填写具体开户网点</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 备注信息 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-info text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sticky-note me-2"></i>备注信息
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label fw-bold">备注</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ account.notes or '' }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>创建时间：</strong>{{ account.created_at | local_time }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>创建者：</strong>{{ account.creator.name }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-save me-2"></i>保存修改
+                    </button>
+                    <a href="{{ url_for('admin_payment_accounts') }}" class="btn btn-outline-secondary btn-lg px-5 ms-3">
+                        <i class="fas fa-times me-2"></i>取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
+
+<script>
+// 表单提交验证
+document.getElementById('editAccountForm').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+});
+</script>
+{% endblock %}

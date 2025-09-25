@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}支付处理中 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        {% if payment_method == 'wechat' %}
+                            <i class="fab fa-weixin text-success me-2"></i>微信支付
+                        {% else %}
+                            <i class="fab fa-alipay text-primary me-2"></i>支付宝支付
+                        {% endif %}
+                    </h2>
+                    <p class="text-muted mb-0">请按提示完成支付</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 支付信息 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>支付订单信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="payment-detail">
+                                <span class="detail-label">订单号码：</span>
+                                <span class="detail-value"><code>{{ payment_order.order_no }}</code></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="payment-detail">
+                                <span class="detail-label">支付金额：</span>
+                                <span class="detail-value text-danger fw-bold">¥{{ "%.2f"|format(payment_order.amount) }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="payment-detail">
+                                <span class="detail-label">支付项目：</span>
+                                <span class="detail-value">{{ payment_order.field_name }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="payment-detail">
+                                <span class="detail-label">关联表单：</span>
+                                <span class="detail-value">{{ payment_order.submission.form.title }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if payment_method == 'wechat' %}
+                <!-- 微信支付处理 -->
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fab fa-weixin me-2"></i>微信扫码支付
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        {% if payment_result.success and payment_result.payment_url %}
+                            <!-- 显示二维码 -->
+                            <div class="qr-code-container mb-4">
+                                <div id="qrcode" class="d-inline-block"></div>
+                                <p class="text-muted mt-3">
+                                    <i class="fas fa-mobile-alt me-2"></i>
+                                    请使用微信扫描上方二维码完成支付
+                                </p>
+                            </div>
+                            
+                            <!-- 支付状态检查 -->
+                            <div class="payment-status mb-4">
+                                <div class="spinner-border text-success me-2" role="status" id="statusSpinner">
+                                    <span class="visually-hidden">检查中...</span>
+                                </div>
+                                <span id="statusText">正在等待支付完成...</span>
+                            </div>
+                            
+                            <!-- 手动刷新按钮 -->
+                            <button class="btn btn-outline-success" onclick="checkPaymentStatus()">
+                                <i class="fas fa-sync-alt me-2"></i>刷新支付状态
+                            </button>
+                        {% else %}
+                            <!-- 支付创建失败 -->
+                            <div class="alert alert-danger">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>支付订单创建失败
+                                </h6>
+                                <p class="mb-2">{{ payment_result.message }}</p>
+                                <hr>
+                                <div class="d-flex justify-content-center">
+                                    <a href="{{ url_for('payment_page', submission_id=payment_order.submission_id) }}" class="btn btn-danger">
+                                        <i class="fas fa-arrow-left me-2"></i>返回重试
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- 支付说明 -->
+            <div class="card border-warning mt-4">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>支付说明
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-success">✅ 支付完成后：</h6>
+                            <ul class="text-success small">
+                                <li>系统将自动更新订单状态</li>
+                                <li>您将收到支付成功通知</li>
+                                <li>可在"我的提交"中查看详情</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-warning">⚠️ 注意事项：</h6>
+                            <ul class="text-warning small">
+                                <li>请确保网络连接稳定</li>
+                                <li>支付金额请核对无误</li>
+                                <li>遇到问题请联系客服</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('view_submission', submission_id=payment_order.submission_id) }}" 
+                   class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left me-2"></i>返回详情
+                </a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-home me-2"></i>返回首页
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-detail {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #6c757d;
+    display: inline-block;
+    min-width: 90px;
+}
+
+.detail-value {
+    color: #495057;
+    font-weight: 500;
+}
+
+.qr-code-container {
+    padding: 2rem;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    border: 2px dashed #dee2e6;
+}
+
+#qrcode {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.payment-status {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.card {
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.alert {
+    border-radius: 0.5rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .qr-code-container {
+        padding: 1rem;
+    }
+    
+    .detail-label {
+        min-width: 80px;
+        font-size: 0.9rem;
+    }
+    
+    .detail-value {
+        font-size: 0.9rem;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if payment_method == 'wechat' and payment_result.success and payment_result.payment_url %}
+        // 生成二维码
+        const qrCodeUrl = '{{ payment_result.payment_url }}';
+        QRCode.toCanvas(document.getElementById('qrcode'), qrCodeUrl, {
+            width: 200,
+            height: 200,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, function (error) {
+            if (error) {
+                console.error('二维码生成失败:', error);
+                document.getElementById('qrcode').innerHTML = '<p class="text-danger">二维码生成失败</p>';
+            }
+        });
+        
+        // 定期检查支付状态
+        let checkInterval = setInterval(checkPaymentStatus, 3000);
+        
+        // 5分钟后停止检查
+        setTimeout(function() {
+            clearInterval(checkInterval);
+            document.getElementById('statusText').textContent = '检查超时，请手动刷新';
+            document.getElementById('statusSpinner').style.display = 'none';
+        }, 300000);
+    {% endif %}
+});
+
+function checkPaymentStatus() {
+    const orderId = {{ payment_order.id }};
+    
+    fetch(`/payment/query/${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (data.status === 'paid') {
+                    // 支付成功，跳转到成功页面
+                    document.getElementById('statusText').textContent = '支付成功！正在跳转...';
+                    document.getElementById('statusSpinner').className = 'spinner-border text-success me-2';
+                    
+                    setTimeout(function() {
+                        window.location.href = `/payment/success/${orderId}`;
+                    }, 1500);
+                } else if (data.status === 'processing') {
+                    document.getElementById('statusText').textContent = '支付处理中，请稍候...';
+                } else {
+                    document.getElementById('statusText').textContent = '等待支付完成...';
+                }
+            } else {
+                console.error('查询支付状态失败:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('查询支付状态异常:', error);
+        });
+}
+
+// 页面可见性变化时重新检查状态
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        checkPaymentStatus();
+    }
+});
+</script>
+{% endblock %}

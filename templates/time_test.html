@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}时间显示测试 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>时间显示测试
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle me-2"></i>时间显示修复说明</h5>
+                        <p class="mb-0">系统已修复时间显示问题，现在所有时间都会自动从UTC时间转换为北京时间（UTC+8）显示。</p>
+                    </div>
+                    
+                    <h5>时间格式示例：</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>格式说明</th>
+                                    <th>过滤器</th>
+                                    <th>显示效果</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>完整时间</td>
+                                    <td><code>|local_time</code></td>
+                                    <td><strong>{{ now() | local_time }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>仅日期</td>
+                                    <td><code>|local_date</code></td>
+                                    <td><strong>{{ now() | local_date }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>简短时间</td>
+                                    <td><code>|local_time_short</code></td>
+                                    <td><strong>{{ now() | local_time_short }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>自定义格式</td>
+                                    <td><code>|local_time('%Y年%m月%d日 %H:%M')</code></td>
+                                    <td><strong>{{ now() | local_time('%Y年%m月%d日 %H:%M') }}</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>使用方法：</h5>
+                        <div class="bg-light p-3 rounded">
+                            <p><strong>在模板中使用过滤器：</strong></p>
+                            <pre><code># 显示完整时间（年-月-日 时:分:秒）
+{{ user.created_at | local_time }}
+
+# 仅显示日期
+{{ form.created_at | local_date }}
+
+# 显示简短时间（月-日 时:分）
+{{ submission.submitted_at | local_time_short }}
+
+# 自定义格式
+{{ payment.paid_at | local_time('%Y年%m月%d日') }}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 alert alert-success">
+                        <h6><i class="fas fa-check-circle me-2"></i>修复范围</h6>
+                        <ul class="mb-0">
+                            <li>用户注册时间</li>
+                            <li>表单创建和更新时间</li>
+                            <li>提交记录时间</li>
+                            <li>支付订单时间</li>
+                            <li>文件上传时间</li>
+                            <li>所有其他系统时间戳</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>返回面板
+                </a>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-success">
+                    <i class="fas fa-tachometer-alt me-2"></i>管理后台
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 添加页面转换动画
+    $('.container').addClass('page-transition');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}收款账户管理 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-university text-primary me-2"></i>收款账户管理
+                    </h2>
+                    <p class="text-muted mb-0">管理微信、支付宝和银行卡收款账户</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_create_payment_account') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>添加收款账户
+                    </a>
+                    <a href="{{ url_for('admin_payments') }}" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-credit-card me-2"></i>支付管理
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收款账户列表 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>收款账户列表
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if accounts %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>账户名称</th>
+                                <th>账户类型</th>
+                                <th>收款人</th>
+                                <th>账户信息</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for account in accounts %}
+                            <tr>
+                                <td>
+                                    <strong>{{ account.account_name }}</strong>
+                                    {% if account.notes %}
+                                        <br><small class="text-muted">{{ account.notes }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if account.account_type == 'wechat_pay' %}
+                                        <i class="fab fa-weixin text-success me-1"></i>微信
+                                    {% elif account.account_type == 'alipay' %}
+                                        <i class="fab fa-alipay text-primary me-1"></i>支付宝
+                                    {% elif account.account_type == 'bank_card' %}
+                                        <i class="fas fa-credit-card text-info me-1"></i>银行卡
+                                    {% endif %}
+                                </td>
+                                <td>{{ account.account_holder }}</td>
+                                <td>
+                                    {% if account.account_type == 'bank_card' %}
+                                        <div>
+                                            <strong>{{ account.bank_name }}</strong>
+                                            <br><code>{{ account.get_account_display() }}</code>
+                                            {% if account.bank_branch %}
+                                                <br><small class="text-muted">{{ account.bank_branch }}</small>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <code>{{ account.get_account_display() }}</code>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" 
+                                               {% if account.is_active %}checked{% endif %}
+                                               onchange="toggleAccountStatus({{ account.id }}, this)">
+                                        <label class="form-check-label">
+                                            <span class="status-text">
+                                                {% if account.is_active %}启用{% else %}禁用{% endif %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>{{ account.created_at | local_time }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('admin_edit_payment_account', account_id=account.id) }}" 
+                                           class="btn btn-outline-primary" title="编辑">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-outline-info" onclick="viewAccount({{ account.id }})" title="查看详情">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-university text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="text-muted mt-3">暂无收款账户</h5>
+                    <p class="text-muted">请添加微信、支付宝或银行卡收款账户</p>
+                    <a href="{{ url_for('admin_create_payment_account') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>添加第一个收款账户
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 使用说明 -->
+    <div class="alert alert-info mt-4">
+        <h6 class="alert-heading">
+            <i class="fas fa-info-circle me-2"></i>使用说明
+        </h6>
+        <ul class="mb-0">
+            <li>收款账户用于接收用户支付的款项</li>
+            <li>银行卡账户信息将进行部分遮蔽保护隐私</li>
+            <li>禁用的账户不会在支付时显示给用户</li>
+            <li>建议至少设置一个微信和一个支付宝账户</li>
+        </ul>
+    </div>
+</div>
+
+<!-- 账户详情模态框 -->
+<div class="modal fade" id="accountDetailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">收款账户详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="accountDetailContent">
+                <!-- 内容由JavaScript动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 切换账户状态
+function toggleAccountStatus(accountId, checkbox) {
+    fetch(`/admin/payment-accounts/${accountId}/toggle-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 更新状态文本
+            const statusText = checkbox.closest('tr').querySelector('.status-text');
+            statusText.textContent = data.is_active ? '启用' : '禁用';
+            
+            // 显示成功消息
+            showAlert('success', data.message);
+        } else {
+            // 恢复开关状态
+            checkbox.checked = !checkbox.checked;
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        checkbox.checked = !checkbox.checked;
+        showAlert('danger', '状态更新失败，请重试');
+    });
+}
+
+// 查看账户详情
+function viewAccount(accountId) {
+    // 这里可以添加查看账户详细信息的逻辑
+    const modal = new bootstrap.Modal(document.getElementById('accountDetailModal'));
+    document.getElementById('accountDetailContent').innerHTML = `
+        <p>正在加载账户详情...</p>
+    `;
+    modal.show();
+}
+
+// 显示警告消息
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // 3秒后自动消失
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

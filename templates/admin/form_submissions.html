@@ -1,0 +1,1222 @@
+{% extends "base.html" %}
+
+{% block title %}{{ form.title }} - 提交记录{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <a href="{{ url_for('admin_forms') }}" class="btn btn-outline-secondary me-3">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h2 class="mb-1">{{ form.title }}</h2>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-paper-plane me-1"></i>提交记录 ({{ submissions|length }}) | 
+                            <i class="fas fa-calendar me-1"></i>创建于 {{ form.created_at | local_date }}
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <a href="{{ url_for('view_form', form_id=form.id) }}" 
+                       class="btn btn-outline-success" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>预览表单
+                    </a>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exportModal">
+                        <i class="fas fa-download me-2"></i>导出数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-primary mb-2">
+                        <i class="fas fa-file-alt text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-primary">{{ submissions|length }}</h4>
+                    <p class="text-muted mb-0">总提交数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning mb-2">
+                        <i class="fas fa-clock text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-warning">{{ submissions|selectattr('status', 'equalto', 'submitted')|list|length }}</h4>
+                    <p class="text-muted mb-0">待审核</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success mb-2">
+                        <i class="fas fa-check-circle text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-success">{{ submissions|selectattr('status', 'equalto', 'approved')|list|length }}</h4>
+                    <p class="text-muted mb-0">已通过</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-danger mb-2">
+                        <i class="fas fa-times-circle text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-danger">{{ submissions|selectattr('status', 'equalto', 'rejected')|list|length }}</h4>
+                    <p class="text-muted mb-0">已拒绝</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交记录列表 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-list me-2"></i>提交记录
+                </h5>
+                <div class="d-flex align-items-center">
+                    <!-- 状态筛选 -->
+                    <select class="form-select form-select-sm me-3" id="statusFilter" onchange="filterByStatus()">
+                        <option value="">所有状态</option>
+                        <option value="submitted">待审核</option>
+                        <option value="approved">已通过</option>
+                        <option value="rejected">已拒绝</option>
+                    </select>
+                    <!-- 搜索框 -->
+                    <div class="input-group input-group-sm" style="width: 200px;">
+                        <input type="text" class="form-control" placeholder="搜索用户..." id="searchInput" onkeyup="searchSubmissions()">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- 批量操作工具栏 -->
+            <div class="batch-actions-toolbar mb-3" id="batchActionsToolbar" style="display: none;">
+                <div class="alert alert-info d-flex justify-content-between align-items-center mb-0">
+                    <div>
+                        <i class="fas fa-check-square me-2"></i>
+                        已选中 <span id="selectedCount">0</span> 个提交记录
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="batchDeleteSubmissions()">
+                            <i class="fas fa-trash me-1"></i>批量删除
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="clearSelection()">
+                            <i class="fas fa-times me-1"></i>取消选择
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="submissionsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 3%;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                <th style="width: 5%;">ID</th>
+                                <th style="width: 15%;">提交者</th>
+                                <th style="width: 15%;">联系方式</th>
+                                <th style="width: 15%;">提交时间</th>
+                                <th style="width: 10%;">状态</th>
+                                <th style="width: 22%;">提交内容摘要</th>
+                                <th style="width: 15%;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                            <tr data-status="{{ submission.status }}">
+                                <td>
+                                    <input type="checkbox" class="submission-checkbox" value="{{ submission.id }}" onchange="updateBatchActions()">
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">#{{ submission.id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar bg-primary text-white rounded-circle me-2">
+                                            {{ submission.user.name[0].upper() }}
+                                        </div>
+                                        <strong>{{ submission.user.name }}</strong>
+                                    </div>
+                                </td>
+                                <td class="user-contact">
+                                    {% if submission.user.email %}
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-envelope me-1"></i>{{ submission.user.email }}
+                                        </small>
+                                    {% endif %}
+                                    {% if submission.user.phone %}
+                                        <small class="text-muted d-block">
+                                            <i class="fas fa-phone me-1"></i>{{ submission.user.phone }}
+                                        </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ submission.submitted_at | local_date }}</span>
+                                    <br><small class="text-muted">{{ submission.submitted_at | local_time('%H:%M:%S') }}</small>
+                                </td>
+                                <td>
+                                    {% if submission.status == 'submitted' %}
+                                        <span class="badge bg-warning">待审核</span>
+                                    {% elif submission.status == 'approved' %}
+                                        <span class="badge bg-success">已通过</span>
+                                    {% elif submission.status == 'rejected' %}
+                                        <span class="badge bg-danger">已拒绝</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ submission.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set data_dict = submission.get_data_dict() %}
+                                    <small class="text-muted">
+                                        {% for field in form.fields[:3] %}
+                                            {% set value = data_dict.get(field.field_name, '') %}
+                                            {% if value %}
+                                                <strong>{{ field.field_label }}:</strong> 
+                                                {% if value|length > 20 %}
+                                                    {{ value[:20] }}...
+                                                {% else %}
+                                                    {{ value }}
+                                                {% endif %}
+                                                <br>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if submission.files %}
+                                            <i class="fas fa-paperclip text-primary"></i> {{ submission.files|length }}个附件
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('view_submission', submission_id=submission.id) }}" 
+                                           class="btn btn-outline-primary" target="_blank" title="查看详情">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if submission.status == 'submitted' %}
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="updateStatus({{ submission.id }}, 'approved')" 
+                                                    title="通过">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="updateStatus({{ submission.id }}, 'rejected')" 
+                                                    title="拒绝">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="deleteSubmission({{ submission.id }}, '{{ submission.user.name }}')" 
+                                                title="删除提交">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="text-muted mt-3">暂无提交记录</h5>
+                    <p class="text-muted">当用户填写并提交表单后，记录将在这里显示</p>
+                    <a href="{{ url_for('view_form', form_id=form.id) }}" 
+                       class="btn btn-primary mt-2" target="_blank">
+                        <i class="fas fa-external-link-alt me-2"></i>去填写表单
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin: 0 auto;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    vertical-align: middle;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.status-filter-active {
+    background-color: #e3f2fd;
+}
+
+/* 批量操作工具栏样式 */
+.batch-actions-toolbar .alert {
+    border-radius: 8px;
+    border: 1px solid #bee5eb;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.batch-actions-toolbar .btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.batch-actions-toolbar .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* 复选框样式 */
+input[type="checkbox"] {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* 表格行选中效果 */
+tr.selected {
+    background-color: #e3f2fd !important;
+}
+
+/* 动画效果 */
+.fade-out {
+    opacity: 0.5 !important;
+    transform: translateX(-100%) !important;
+    transition: all 0.3s ease !important;
+}
+</style>
+
+<script>
+// 按状态筛选
+function filterByStatus() {
+    const filter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('#submissionsTable tbody tr');
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        if (filter === '' || status === filter) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// 搜索提交记录
+function searchSubmissions() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#submissionsTable tbody tr');
+    
+    rows.forEach(row => {
+        const userName = row.cells[1].textContent.toLowerCase();
+        const userContact = row.cells[2].textContent.toLowerCase();
+        const content = row.cells[5].textContent.toLowerCase();
+        
+        if (userName.includes(searchTerm) || userContact.includes(searchTerm) || content.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// 更新提交状态
+function updateStatus(submissionId, newStatus) {
+    const statusText = newStatus === 'approved' ? '通过' : '拒绝';
+    if (confirm(`确定要${statusText}这个提交吗？`)) {
+        // 获取当前行的按钮，显示加载状态
+        const buttons = document.querySelectorAll(`[onclick*="updateStatus(${submissionId}"]`);
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.originalHtml = originalHtml;
+        });
+        
+        // 发送请求到后端更新状态
+        fetch(`/admin/submissions/${submissionId}/update-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                
+                // 更新页面显示
+                const rows = document.querySelectorAll('#submissionsTable tbody tr');
+                let targetRow = null;
+                
+                // 查找包含指定提交ID的行
+                rows.forEach(row => {
+                    const idBadge = row.querySelector('.badge');
+                    if (idBadge && idBadge.textContent.includes(`#${submissionId}`)) {
+                        targetRow = row;
+                    }
+                });
+                
+                if (targetRow) {
+                    // 更新行的data-status属性
+                    targetRow.setAttribute('data-status', newStatus);
+                    
+                    // 更新状态徽章
+                    const statusCell = targetRow.cells[5]; // 状态列
+                    let badgeClass = 'bg-secondary';
+                    if (newStatus === 'approved') badgeClass = 'bg-success';
+                    else if (newStatus === 'rejected') badgeClass = 'bg-danger';
+                    else if (newStatus === 'submitted') badgeClass = 'bg-warning';
+                    
+                    statusCell.innerHTML = `<span class="badge ${badgeClass}">${data.status_text}</span>`;
+                    
+                    // 更新操作按钮
+                    const actionCell = targetRow.cells[7]; // 操作列
+                    if (newStatus === 'approved' || newStatus === 'rejected') {
+                        // 移除审核按钮，保留查看和删除按钮
+                        const viewBtn = actionCell.querySelector('.btn-outline-primary');
+                        const deleteBtn = actionCell.querySelector('.btn-outline-danger');
+                        if (viewBtn && deleteBtn) {
+                            actionCell.innerHTML = '<div class="btn-group btn-group-sm">' + viewBtn.outerHTML + deleteBtn.outerHTML + '</div>';
+                        }
+                    }
+                }
+                
+                // 更新统计数字
+                updateStatistics();
+            } else {
+                throw new Error(data.error || '状态更新失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast(error.message || '状态更新失败，请重试', 'error');
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerHTML = btn.originalHtml || btn.innerHTML;
+            });
+        });
+    }
+}
+
+// 删除单个提交记录
+function deleteSubmission(submissionId, userName) {
+    // 设置模态框内容
+    document.getElementById('deleteConfirmText').innerHTML = 
+        `确定要删除用户 <strong>"${userName}"</strong> 的这个提交记录吗？`;
+    
+    // 显示模态框
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+    
+    // 设置确认按钮的点击事件
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+        // 显示加载状态
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>删除中...';
+        btn.disabled = true;
+        
+        // 发送删除请求
+        fetch(`/admin/submissions/${submissionId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 关闭模态框
+                modal.hide();
+                
+                showToast(data.message, 'success');
+                
+                // 从表格中移除该行
+                const rows = document.querySelectorAll('#submissionsTable tbody tr');
+                rows.forEach(row => {
+                    const idBadge = row.querySelector('.badge');
+                    if (idBadge && idBadge.textContent.includes(`#${submissionId}`)) {
+                        row.style.opacity = '0.5';
+                        row.style.transform = 'translateX(-100%)';
+                        setTimeout(() => {
+                            row.remove();
+                            // 更新统计数字
+                            updateStatistics();
+                            // 检查是否还有提交记录
+                            checkEmptyTable();
+                        }, 300);
+                    }
+                });
+                
+            } else {
+                throw new Error(data.error || '删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast(error.message || '删除失败，请重试', 'error');
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    };
+}
+
+// 批量选择功能
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const submissionCheckboxes = document.querySelectorAll('.submission-checkbox');
+    
+    submissionCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBatchActions();
+}
+
+function updateBatchActions() {
+    const selectedCheckboxes = document.querySelectorAll('.submission-checkbox:checked');
+    const batchToolbar = document.getElementById('batchActionsToolbar');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (selectedCheckboxes.length > 0) {
+        batchToolbar.style.display = 'block';
+        selectedCount.textContent = selectedCheckboxes.length;
+    } else {
+        batchToolbar.style.display = 'none';
+    }
+    
+    // 更新全选复选框状态
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const allCheckboxes = document.querySelectorAll('.submission-checkbox');
+    if (selectedCheckboxes.length === allCheckboxes.length && allCheckboxes.length > 0) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else if (selectedCheckboxes.length > 0) {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    } else {
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    }
+}
+
+function clearSelection() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const submissionCheckboxes = document.querySelectorAll('.submission-checkbox');
+    
+    selectAllCheckbox.checked = false;
+    submissionCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    updateBatchActions();
+}
+
+// 批量删除提交记录
+function batchDeleteSubmissions() {
+    const selectedCheckboxes = document.querySelectorAll('.submission-checkbox:checked');
+    const submissionIds = Array.from(selectedCheckboxes).map(checkbox => parseInt(checkbox.value));
+    
+    if (submissionIds.length === 0) {
+        showToast('请先选择要删除的提交记录', 'warning');
+        return;
+    }
+    
+    if (confirm(`确定要删除这 ${submissionIds.length} 个提交记录吗？\n\n注意：删除后无法恢复，相关的上传文件也会被删除。`)) {
+        // 显示加载状态
+        const deleteButton = document.querySelector('[onclick="batchDeleteSubmissions()"]');
+        if (deleteButton) {
+            const originalHtml = deleteButton.innerHTML;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>删除中...';
+            deleteButton.disabled = true;
+            deleteButton.originalHtml = originalHtml;
+        }
+        
+        // 发送批量删除请求
+        fetch('/admin/submissions/batch-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                submission_ids: submissionIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                
+                // 从表格中移除选中的行
+                selectedCheckboxes.forEach(checkbox => {
+                    const row = checkbox.closest('tr');
+                    if (row) {
+                        row.style.opacity = '0.5';
+                        row.style.transform = 'translateX(-100%)';
+                        setTimeout(() => {
+                            row.remove();
+                        }, 300);
+                    }
+                });
+                
+                // 清除选择状态
+                setTimeout(() => {
+                    clearSelection();
+                    updateStatistics();
+                    checkEmptyTable();
+                }, 500);
+                
+            } else {
+                throw new Error(data.error || '批量删除失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast(error.message || '批量删除失败，请重试', 'error');
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            if (deleteButton) {
+                deleteButton.disabled = false;
+                deleteButton.innerHTML = deleteButton.originalHtml || deleteButton.innerHTML;
+            }
+        });
+    }
+}
+
+// 检查表格是否为空
+function checkEmptyTable() {
+    const tableRows = document.querySelectorAll('#submissionsTable tbody tr');
+    if (tableRows.length === 0) {
+        // 如果表格为空，刷新页面显示空状态
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
+}
+
+// 更新统计数字
+function updateStatistics() {
+    const rows = document.querySelectorAll('#submissionsTable tbody tr');
+    let submitted = 0, approved = 0, rejected = 0;
+    
+    rows.forEach(row => {
+        const status = row.getAttribute('data-status');
+        if (status === 'submitted') submitted++;
+        else if (status === 'approved') approved++;
+        else if (status === 'rejected') rejected++;
+    });
+    
+    // 更新统计卡片
+    const statCards = document.querySelectorAll('.stat-icon');
+    if (statCards.length >= 4) {
+        statCards[1].parentElement.querySelector('h4').textContent = submitted;
+        statCards[2].parentElement.querySelector('h4').textContent = approved;
+        statCards[3].parentElement.querySelector('h4').textContent = rejected;
+    }
+}
+
+// 新的表单提交数据导出函数，支持可选保存位置和格式
+function startSubmissionExport() {
+    try {
+        console.log('🚀 开始导出表单提交数据');
+        
+        // 获取表单数据
+        const fileName = document.getElementById('submissionFileName').value.trim() || `${document.title}_submissions`;
+        const format = document.querySelector('input[name="submissionExportFormat"]:checked').value;
+        
+        // 获取导出内容选项
+        const includeSubmitterInfo = document.getElementById('includeSubmitterInfo').checked;
+        const includeSubmissionTime = document.getElementById('includeSubmissionTime').checked;
+        const includeFormData = document.getElementById('includeFormData').checked;
+        const includeAttachments = document.getElementById('includeAttachments').checked;
+        
+        // 获取状态筛选
+        const statusFilter = document.getElementById('exportSubmissionStatusFilter').value;
+        
+        console.log('📋 导出参数:', { fileName, format, statusFilter });
+        
+        // 关闭模态框 - 使用更安全的方式，避免 aria-hidden 问题
+        try {
+            const modalElement = document.getElementById('exportModal');
+            if (modalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    // 先移除焦点，再关闭模态框
+                    const focusedElement = document.activeElement;
+                    if (focusedElement && modalElement.contains(focusedElement)) {
+                        focusedElement.blur();
+                    }
+                    modal.hide();
+                    console.log('✅ 模态框已关闭');
+                } else {
+                    // 如果实例不存在，手动关闭模态框
+                    modalElement.style.display = 'none';
+                    modalElement.removeAttribute('aria-hidden'); // 移除 aria-hidden
+                    document.body.classList.remove('modal-open');
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) backdrop.remove();
+                    console.log('✅ 手动关闭模态框');
+                }
+            }
+        } catch (modalError) {
+            console.warn('⚠️ 关闭模态框时出错:', modalError);
+        }
+        
+        // 显示加载状态的Toast
+        showToast('正在准备导出数据，请稍候...', 'info');
+        
+        // 获取表单ID
+        const formId = window.location.pathname.split('/')[3];
+        console.log('📍 当前URL路径:', window.location.pathname);
+        console.log('📍 解析的表单ID:', formId);
+        
+        // 验证表单ID是否有效
+        if (!formId || isNaN(formId)) {
+            console.error('❌ 无效的表单ID:', formId);
+            throw new Error(`无效的表单ID: ${formId}`);
+        }
+        
+        // 构建请求URL和参数 - 使用与成功测试相同的方式
+        const params = new URLSearchParams({
+            format: format,
+            fileName: fileName,
+            includeSubmitterInfo: includeSubmitterInfo.toString(),
+            includeSubmissionTime: includeSubmissionTime.toString(),
+            includeFormData: includeFormData.toString(),
+            includeAttachments: includeAttachments.toString()
+        });
+        
+        // 只有当statusFilter不为空时才添加
+        if (statusFilter) {
+            params.append('statusFilter', statusFilter);
+        }
+        
+        console.log('📝 发送请求参数:', params.toString());
+        
+        // 构建完整的URL
+        const exportUrl = `/admin/export/forms/${formId}?${params.toString()}`;
+        console.log('🔗 完整导出URL:', exportUrl);
+        
+        // 根据格式类型处理不同的下载方式
+        if (format === 'zip') {
+            // ZIP格式需要直接下载，不能使用fetch
+            console.log('📦 开始 ZIP 打包下载...');
+            
+            // 创建隐藏的下载链接
+            const downloadLink = document.createElement('a');
+            downloadLink.href = exportUrl;
+            downloadLink.style.display = 'none';
+            downloadLink.download = ''; // 让浏览器自动确定文件名
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            showToast('📦 ZIP打包正在准备中，包含所有附件文件，请稍候...', 'info');
+            return; // ZIP格式直接返回，不执行下面的代码
+        } else {
+            // Excel和CSV格式也使用自动下载
+            console.log(`📊 开始 ${format === 'excel' ? 'Excel' : 'CSV'} 自动下载...`);
+            
+            // 创建隐藏的下载链接
+            const downloadLink = document.createElement('a');
+            downloadLink.href = exportUrl;
+            downloadLink.style.display = 'none';
+            downloadLink.download = ''; // 让浏览器自动确定文件名
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            const formatText = format === 'excel' ? 'Excel' : 'CSV';
+            showToast(`📊 ${formatText}文件正在准备中，请稍候...`, 'info');
+            return; // 直接返回，不执行下面的手动下载代码
+        }
+        
+        
+    } catch (error) {
+        console.error('❌ 导出错误:', error);
+        showToast('导出失败，请重试', 'error');
+    }
+}
+
+// 导出数据为Excel格式
+function exportData() {
+    try {
+        console.log('开始导出表单提交数据为Excel格式...');
+        
+        // 显示加载状态
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>导出Excel中...';
+        btn.disabled = true;
+        
+        // 获取表单ID
+        const formId = window.location.pathname.split('/')[3];
+        
+        // 使用fetch获取Excel数据并下载
+        fetch(`/admin/export/forms/${formId}`, {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('响应状态:', response.status);
+            console.log('响应头:', response.headers.get('content-type'));
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            // 检查响应类型
+            const contentType = response.headers.get('content-type');
+            console.log('响应类型:', contentType);
+            
+            if (contentType && contentType.includes('application/json')) {
+                // 如果是JSON响应，说明可能有错误
+                return response.json().then(data => {
+                    throw new Error(data.error || '服务器返回JSON响应');
+                });
+            }
+            
+            return response.blob();
+        })
+        .then(blob => {
+            console.log('Excel数据大小:', blob.size, 'bytes');
+            
+            if (blob.size === 0) {
+                throw new Error('接收到空文件');
+            }
+            
+            // 创建Excel下载链接
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `form_submissions_${formId}_${new Date().toISOString().slice(0,19).replace(/[-:]/g, '').replace('T', '_')}.xlsx`;
+            document.body.appendChild(a);
+            
+            console.log('开始下载Excel文件...');
+            a.click();
+            
+            // 清理资源
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }, 100);
+            
+            showToast('表单数据Excel文件导出成功', 'success');
+        })
+        .catch(error => {
+            console.error('导出Excel错误:', error);
+            showToast(`Excel导出失败: ${error.message}`, 'error');
+        })
+        .finally(() => {
+            // 恢复按钮状态
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+        
+    } catch (error) {
+        console.error('导出Excel错误:', error);
+        showToast('Excel导出失败，请重试', 'error');
+        
+        // 恢复按钮状态
+        const btn = event.target;
+        btn.innerHTML = '<i class="fas fa-download me-2"></i>导出数据';
+        btn.disabled = false;
+    }
+}
+
+// 显示提示消息
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+// 🎯 简单直接的下载函数 - 最可靠的方式
+function directDownload(url, fileName) {
+    console.log('🚀 使用简单直接下载方式:', url);
+    
+    // 创建临时链接并自动点击
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'none';
+    
+    // 添加到页面并触发点击
+    document.body.appendChild(link);
+    link.click();
+    
+    // 立即清理
+    setTimeout(() => {
+        if (document.body.contains(link)) {
+            document.body.removeChild(link);
+        }
+    }, 100);
+    
+    console.log('✅ 直接下载已触发');
+    showToast('✅ 下载已开始，请查看浏览器下载栏！', 'success');
+}
+function downloadFile(url, fileName) {
+    console.log('🚀 开始下载文件:', url);
+    
+    // 方法1: 优先尝试 fetch + blob 下载（适用于大文件）
+    fetch(url, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream'
+        }
+    })
+    .then(response => {
+        console.log('📦 响应状态:', response.status);
+        console.log('📦 内容类型:', response.headers.get('content-type'));
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.blob();
+    })
+    .then(blob => {
+        console.log('📦 文件大小:', blob.size, 'bytes');
+        
+        if (blob.size === 0) {
+            throw new Error('接收到空文件');
+        }
+        
+        // 创建下载链接
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = fileName;
+        
+        // 添加到页面并触发下载
+        document.body.appendChild(a);
+        console.log('🚀 触发下载:', fileName);
+        a.click();
+        
+        // 清理资源
+        setTimeout(() => {
+            window.URL.revokeObjectURL(downloadUrl);
+            if (document.body.contains(a)) {
+                document.body.removeChild(a);
+            }
+        }, 1000);
+        
+        // 显示成功提示
+        showToast('✅ 文件下载成功！', 'success');
+        
+        // 关闭下载提示框
+        setTimeout(() => {
+            const downloadNotice = document.querySelector('.alert.alert-success.position-fixed');
+            if (downloadNotice) {
+                downloadNotice.style.opacity = '0';
+                downloadNotice.style.transform = 'translateX(100%)';
+                setTimeout(() => downloadNotice.remove(), 300);
+            }
+        }, 2000);
+        
+    })
+    .catch(error => {
+        console.error('❌ fetch下载失败:', error);
+        
+        // 如果fetch失败，则使用备用方案
+        console.log('🔄 尝试备用下载方案...');
+        
+        // 方法2: 使用 window.open
+        try {
+            const newWindow = window.open(url, '_blank');
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                // 弹窗被阻止，使用直接跳转
+                console.log('🔄 弹窗被阻止，使用直接跳转...');
+                window.location.href = url;
+            } else {
+                console.log('✅ 新窗口下载已启动');
+                // 3秒后关闭新窗口
+                setTimeout(() => {
+                    if (!newWindow.closed) {
+                        newWindow.close();
+                    }
+                }, 3000);
+            }
+        } catch (openError) {
+            console.error('❌ window.open失败:', openError);
+            showToast(`下载失败: ${error.message}. 请尝试直接点击链接。`, 'error');
+        }
+    });
+}
+
+// 复制下载链接到剪贴板
+function copyDownloadLink(url) {
+    const fullUrl = window.location.origin + url;
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        // 使用现代 Clipboard API
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            showToast('✅ 下载链接已复制到剪贴板！', 'success');
+        }).catch(err => {
+            console.error('复制失败:', err);
+            fallbackCopyTextToClipboard(fullUrl);
+        });
+    } else {
+        // 备用方案
+        fallbackCopyTextToClipboard(fullUrl);
+    }
+}
+
+// 备用复制方法
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '-9999px';
+    textArea.style.left = '-9999px';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast('✅ 下载链接已复制到剪贴板！', 'success');
+        } else {
+            showToast('❌ 复制失败，请手动复制链接', 'error');
+        }
+    } catch (err) {
+        console.error('复制失败:', err);
+        showToast('❌ 复制失败，请手动复制链接', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+}
+</script>
+
+<!-- 导出选项模态框 -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="fas fa-download me-2"></i>导出{{ form.title }}提交数据
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportFormSubmissions">
+                    <!-- 文件名设置 -->
+                    <div class="mb-3">
+                        <label for="submissionFileName" class="form-label">
+                            <i class="fas fa-file me-1"></i>文件名
+                        </label>
+                        <input type="text" class="form-control" id="submissionFileName" 
+                               value="{{ form.title }}_submissions" placeholder="请输入文件名">
+                        <div class="form-text">不需要包含扩展名，系统会自动添加</div>
+                    </div>
+                    
+                    <!-- 导出格式选择 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-file-export me-1"></i>导出格式
+                        </label>
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="submissionExportFormat" 
+                                           id="submissionFormatExcel" value="excel" checked>
+                                    <label class="form-check-label" for="submissionFormatExcel">
+                                        <i class="fas fa-file-excel text-success me-1"></i>Excel 文件
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="submissionExportFormat" 
+                                           id="submissionFormatCsv" value="csv">
+                                    <label class="form-check-label" for="submissionFormatCsv">
+                                        <i class="fas fa-file-csv text-primary me-1"></i>CSV 文件
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="submissionExportFormat" 
+                                           id="submissionFormatZip" value="zip">
+                                    <label class="form-check-label" for="submissionFormatZip">
+                                        <i class="fas fa-file-archive text-warning me-1"></i>ZIP 打包
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            ZIP 打包会将导出数据和所有附件文件一起下载
+                        </div>
+                    </div>
+                    
+                    <!-- 导出内容选择 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-list-check me-1"></i>导出内容
+                        </label>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeSubmitterInfo" checked>
+                                    <label class="form-check-label" for="includeSubmitterInfo">
+                                        提交者信息
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeSubmissionTime" checked>
+                                    <label class="form-check-label" for="includeSubmissionTime">
+                                        提交时间
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeFormData" checked>
+                                    <label class="form-check-label" for="includeFormData">
+                                        表单数据
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeAttachments" checked>
+                                    <label class="form-check-label" for="includeAttachments">
+                                        附件信息（包含下载链接）
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 状态筛选 -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-filter me-1"></i>状态筛选
+                        </label>
+                        <select class="form-select" id="exportSubmissionStatusFilter">
+                            <option value="">所有状态</option>
+                            <option value="submitted">仅待审核</option>
+                            <option value="approved">仅已通过</option>
+                            <option value="rejected">仅已拒绝</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-primary" onclick="startSubmissionExport()">
+                    <i class="fas fa-download me-1"></i>开始导出
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-danger" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>确认删除
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div class="alert alert-warning border-0 bg-light">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>删除操作无法撤销！</strong>相关的上传文件也会被永久删除。
+                </div>
+                <p class="mb-0" id="deleteConfirmText">确定要删除这个提交记录吗？</p>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>取消
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-1"></i>确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+
+{% block title %}创建表单 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('admin_forms') }}" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="mb-1">创建新表单</h2>
+                    <p class="text-muted mb-0">设计并创建一个新的信息收集表单</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" id="createForm">
+        <!-- 表单基本信息 -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>表单基本信息
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label for="title" class="form-label fw-bold">表单标题 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-lg" id="title" name="title" required>
+                    <div class="form-text">表单的名称，将显示给用户</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="description" class="form-label fw-bold">表单描述</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    <div class="form-text">表单的用途说明，可选</div>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="allow_multiple_submissions" name="allow_multiple_submissions">
+                    <label class="form-check-label fw-bold" for="allow_multiple_submissions">
+                        允许多次提交
+                    </label>
+                    <div class="form-text">勾选后，同一用户可以多次填写此表单</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 字段设计 -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-success text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>表单字段设计
+                    </h5>
+                    <button type="button" class="btn btn-light" data-action="add-field">
+                        <i class="fas fa-plus me-2"></i>添加字段
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <div id="fieldsContainer">
+                    <!-- 字段将通过JavaScript动态添加 -->
+                </div>
+                
+                <div class="text-center py-4" id="noFieldsMessage">
+                    <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                    <h6 class="text-muted mt-3">暂无字段</h6>
+                    <p class="text-muted">点击上方"添加字段"按钮开始设计表单</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提交按钮 -->
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary btn-lg px-5">
+                <i class="fas fa-save me-2"></i>创建表单
+            </button>
+            <a href="{{ url_for('admin_forms') }}" class="btn btn-outline-secondary btn-lg px-5 ms-3">
+                <i class="fas fa-times me-2"></i>取消
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.field-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+}
+
+.field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.field-body {
+    display: none;
+}
+
+.field-card.expanded .field-body {
+    display: block;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.field-preview {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
+
+<script>
+// 字段类型选项
+const fieldTypes = [
+    { value: 'text', label: '文本输入', icon: 'fas fa-font' },
+    { value: 'textarea', label: '文本域', icon: 'fas fa-align-left' },
+    { value: 'email', label: '邮箱', icon: 'fas fa-envelope' },
+    { value: 'tel', label: '电话', icon: 'fas fa-phone' },
+    { value: 'number', label: '数字', icon: 'fas fa-hashtag' },
+    { value: 'date', label: '日期', icon: 'fas fa-calendar' },
+    { value: 'select', label: '下拉选择', icon: 'fas fa-chevron-down' },
+    { value: 'radio', label: '单选框', icon: 'fas fa-dot-circle' },
+    { value: 'checkbox', label: '多选框', icon: 'fas fa-check-square' },
+    { value: 'file', label: '文件上传', icon: 'fas fa-file-upload' },
+    { value: 'wechat_pay', label: '微信支付', icon: 'fab fa-weixin' },
+    { value: 'alipay', label: '支付宝', icon: 'fab fa-alipay' },
+];
+
+// 当前字段计数
+let fieldCount = 0;
+
+// 事件委托处理
+document.addEventListener('click', function(e) {
+    // 添加字段按钮
+    if (e.target.closest('[data-action="add-field"]')) {
+        addField();
+        return;
+    }
+    
+    // 切换字段展开/收起
+    const toggleBtn = e.target.closest('[data-action="toggle"]');
+    if (toggleBtn) {
+        const index = toggleBtn.dataset.index;
+        toggleField(index);
+        return;
+    }
+    
+    // 移除字段
+    const removeBtn = e.target.closest('[data-action="remove"]');
+    if (removeBtn) {
+        const index = removeBtn.dataset.index;
+        const fieldId = removeBtn.dataset.fieldId;
+        removeField(index, fieldId);
+        return;
+    }
+});
+
+// 字段输入变化时更新预览
+document.addEventListener('change', function(e) {
+    // 更新预览
+    if (e.target.closest('[data-action="update-preview"]')) {
+        const index = e.target.closest('[data-action="update-preview"]').dataset.index;
+        updatePreview(index);
+        return;
+    }
+    
+    // 更新预览和选项显示
+    if (e.target.closest('[data-action="update-preview-options"]')) {
+        const index = e.target.closest('[data-action="update-preview-options"]').dataset.index;
+        updatePreview(index);
+        toggleOptions(index);
+        return;
+    }
+});
+
+// 添加字段
+function addField() {
+    const container = document.getElementById('fieldsContainer');
+    const noFieldsMessage = document.getElementById('noFieldsMessage');
+    
+    // 隐藏无字段提示
+    noFieldsMessage.style.display = 'none';
+    
+    // 创建字段卡片
+    const fieldCard = document.createElement('div');
+    fieldCard.className = 'field-card';
+    fieldCard.id = 'field_' + fieldCount;
+    
+    // 生成字段类型选项
+    let typeOptions = '';
+    fieldTypes.forEach(type => {
+        typeOptions += '<option value="' + type.value + '">' + type.label + '</option>';
+    });
+    
+    fieldCard.innerHTML = `
+        <div class="field-header">
+            <div>
+                <strong>字段 #` + (fieldCount + 1) + `</strong>
+                <span class="field-preview text-muted ms-2" id="preview_` + fieldCount + `">未设置</span>
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-primary me-1" data-action="toggle" data-index="` + fieldCount + `">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-action="remove" data-index="` + fieldCount + `">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="field-body" id="body_` + fieldCount + `">
+            <input type="hidden" name="field_` + fieldCount + `_id" value="">
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">字段名称 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="field_` + fieldCount + `_name" 
+                           data-action="update-preview" data-index="` + fieldCount + `" placeholder="英文字段名，如：name">
+                    <div class="form-text">程序内部使用的字段名，必须是英文</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">字段标签 <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="field_` + fieldCount + `_label" 
+                           data-action="update-preview" data-index="` + fieldCount + `" placeholder="显示给用户的字段名">
+                    <div class="form-text">用户看到的字段名称</div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">字段类型 <span class="text-danger">*</span></label>
+                    <select class="form-select" name="field_` + fieldCount + `_type" data-action="update-preview-options" data-index="` + fieldCount + `">
+                        <option value="">请选择字段类型</option>
+                        ` + typeOptions + `
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">占位符</label>
+                    <input type="text" class="form-control" name="field_` + fieldCount + `_placeholder" 
+                           data-action="update-preview" data-index="` + fieldCount + `" placeholder="输入提示文字">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">是否必填</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" name="field_` + fieldCount + `_required" 
+                               id="required_` + fieldCount + `" data-action="update-preview" data-index="` + fieldCount + `">
+                        <label class="form-check-label" for="required_` + fieldCount + `">必填字段</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3" id="options_` + fieldCount + `" style="display: none;">
+                <label class="form-label fw-bold">选项设置</label>
+                <textarea class="form-control" name="field_` + fieldCount + `_options" rows="3" 
+                          placeholder="每行一个选项，例如：&#10;选项1&#10;选项2&#10;选项3"></textarea>
+                <div class="form-text">仅对下拉选择、单选框、多选框有效，每行一个选项</div>
+            </div>
+            
+            <div class="mb-3" id="payment_account_` + fieldCount + `" style="display: none;">
+                <label class="form-label fw-bold">收款账户</label>
+                <select class="form-select" name="field_` + fieldCount + `_payment_account">
+                    <option value="">请选择收款账户</option>
+                    <!-- 收款账户选项将通过AJAX加载 -->
+                </select>
+                <div class="form-text">仅对支付字段有效，需要先创建收款账户</div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(fieldCard);
+    
+    // 添加隐藏字段计数
+    const fieldCountInput = document.createElement('input');
+    fieldCountInput.type = 'hidden';
+    fieldCountInput.name = 'field_count';
+    fieldCountInput.value = ++fieldCount;
+    document.getElementById('createForm').appendChild(fieldCountInput);
+}
+
+// 切换字段展开/收起
+function toggleField(index) {
+    const body = document.getElementById('body_' + index);
+    const button = body.previousElementSibling.querySelector('button');
+    const icon = button.querySelector('i');
+    
+    if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block';
+        icon.className = 'fas fa-chevron-up';
+    } else {
+        body.style.display = 'none';
+        icon.className = 'fas fa-chevron-down';
+    }
+}
+
+// 移除字段
+function removeField(index) {
+    const fieldCard = document.getElementById('field_' + index);
+    if (fieldCard) {
+        fieldCard.remove();
+        fieldCount--;
+        
+        // 更新字段计数
+        const fieldCountInput = document.querySelector('input[name="field_count"]');
+        if (fieldCountInput) {
+            fieldCountInput.value = fieldCount;
+        }
+        
+        // 如果没有字段了，显示提示
+        const container = document.getElementById('fieldsContainer');
+        if (container.children.length === 0) {
+            document.getElementById('noFieldsMessage').style.display = 'block';
+        }
+    }
+}
+
+// 更新字段预览
+function updatePreview(index) {
+    const name = document.querySelector('[name="field_' + index + '_name"]').value;
+    const label = document.querySelector('[name="field_' + index + '_label"]').value;
+    const type = document.querySelector('[name="field_' + index + '_type"]').value;
+    const required = document.querySelector('[name="field_' + index + '_required"]').checked;
+    
+    const preview = document.getElementById('preview_' + index);
+    if (preview) {
+        const typeLabel = fieldTypes.find(t => t.value === type)?.label || '未设置';
+        preview.textContent = (label || name || '未命名') + ' (' + typeLabel + ')' + (required ? ' *' : '');
+    }
+}
+
+// 切换选项显示
+function toggleOptions(index) {
+    const type = document.querySelector('[name="field_' + index + '_type"]').value;
+    const optionsDiv = document.getElementById('options_' + index);
+    const paymentDiv = document.getElementById('payment_account_' + index);
+    
+    // 显示/隐藏选项设置
+    if (['select', 'radio', 'checkbox'].includes(type)) {
+        optionsDiv.style.display = 'block';
+    } else {
+        optionsDiv.style.display = 'none';
+    }
+    
+    // 显示/隐藏支付账户设置
+    if (['wechat_pay', 'alipay'].includes(type)) {
+        paymentDiv.style.display = 'block';
+        loadPaymentAccounts(index);
+    } else {
+        paymentDiv.style.display = 'none';
+    }
+}
+
+// 加载收款账户（模拟）
+function loadPaymentAccounts(index) {
+    // 这里应该通过AJAX加载实际的收款账户
+    // 暂时使用模拟数据
+    const select = document.querySelector('[name="field_' + index + '_payment_account"]');
+    if (select) {
+        select.innerHTML = `
+            <option value="">请选择收款账户</option>
+            <option value="1">微信收款账户 - 微信号：wx123456</option>
+            <option value="2">支付宝账户 - 账号：alipay@example.com</option>
+        `;
+    }
+}
+
+// 表单提交验证
+document.getElementById('createForm').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    if (!title) {
+        e.preventDefault();
+        alert('请填写表单标题');
+        return;
+    }
+    
+    // 可以添加更多验证逻辑
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>创建中...';
+    }
+});
+</script>
+{% endblock %}

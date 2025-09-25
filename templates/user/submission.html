@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}提交详情 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 返回按钮 -->
+            <div class="mb-3">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回我的面板
+                </a>
+            </div>
+            
+            <!-- 提交详情卡片 -->
+            <div class="card border-0 shadow-lg">
+                <div class="card-header py-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-1">{{ submission.form.title }}</h3>
+                            <p class="text-muted mb-0">提交时间：{{ submission.submitted_at | local_time }}</p>
+                        </div>
+                        <div>
+                            {% if submission.status == 'submitted' %}
+                                <span class="badge bg-warning fs-6">待审核</span>
+                            {% elif submission.status == 'approved' %}
+                                <span class="badge bg-success fs-6">已通过</span>
+                            {% elif submission.status == 'rejected' %}
+                                <span class="badge bg-danger fs-6">已拒绝</span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">{{ submission.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- 表单描述 -->
+                    {% if submission.form.description %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>{{ submission.form.description }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- 提交数据 -->
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-list me-2"></i>提交内容
+                    </h5>
+                    
+                    {% set data_dict = submission.get_data_dict() %}
+                    
+                    {% for field in submission.form.fields|sort(attribute='order_index') %}
+                        <div class="form-group mb-4">
+                            <label class="form-label fw-bold text-secondary">
+                                {{ field.field_label }}
+                                {% if field.is_required %}
+                                    <span class="text-danger">*</span>
+                                {% endif %}
+                            </label>
+                            
+                            {% set field_value = data_dict.get(field.field_name, '') %}
+                            
+                            {% if field.field_type == 'file' %}
+                                <!-- 文件字段显示 -->
+                                {% set uploaded_files = submission.files|selectattr('field_name', 'equalto', field.field_name)|list %}
+                                {% if uploaded_files %}
+                                    {% for file in uploaded_files %}
+                                        <div class="file-item p-3 border rounded bg-light">
+                                            <div class="d-flex align-items-center">
+                                                {% if file.file_type and file.file_type.startswith('image/') %}
+                                                    <i class="fas fa-image text-primary me-3 fs-4"></i>
+                                                {% elif file.file_type and file.file_type.startswith('video/') %}
+                                                    <i class="fas fa-video text-danger me-3 fs-4"></i>
+                                                {% else %}
+                                                    <i class="fas fa-file text-secondary me-3 fs-4"></i>
+                                                {% endif %}
+                                                
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">{{ file.original_filename }}</h6>
+                                                    <small class="text-muted">
+                                                        {% if file.file_size %}
+                                                            大小: {{ "%.2f"|format(file.file_size / 1024 / 1024) }} MB
+                                                        {% endif %}
+                                                        {% if file.uploaded_at %}
+                                                            | 上传时间: {{ file.uploaded_at | local_time }}
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                                
+                                                <div>
+                                                    <a href="{{ url_for('uploaded_file', filename=file.saved_filename) }}" 
+                                                       class="btn btn-sm btn-outline-primary" target="_blank">
+                                                        <i class="fas fa-download me-1"></i>下载
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="text-muted fst-italic">未上传文件</div>
+                                {% endif %}
+                            
+                            {% elif field.field_type in ['wechat_pay', 'alipay'] %}
+                                <!-- 支付字段显示 -->
+                                <div class="payment-info border rounded p-3">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            {% if field.field_type == 'wechat_pay' %}
+                                                <i class="fab fa-weixin text-success me-3" style="font-size: 1.5rem;"></i>
+                                                <div>
+                                                    <strong>微信支付</strong>
+                                                    <div class="text-muted">金额：¥{{ field_value if field_value else '0.00' }}</div>
+                                                </div>
+                                            {% else %}
+                                                <i class="fab fa-alipay text-primary me-3" style="font-size: 1.5rem;"></i>
+                                                <div>
+                                                    <strong>支付宝支付</strong>
+                                                    <div class="text-muted">金额：¥{{ field_value if field_value else '0.00' }}</div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- 显示支付状态 -->
+                                        {% set payment_order = submission.payment_orders|selectattr('field_name', 'equalto', field.field_name)|first %}
+                                        {% if payment_order %}
+                                            <div class="payment-status">
+                                                {% if payment_order.status == 'paid' %}
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>已支付
+                                                    </span>
+                                                    <div class="mt-1">
+                                                        <small class="text-muted">
+                                                            交易号：{{ payment_order.trade_no }}
+                                                        </small>
+                                                    </div>
+                                                {% elif payment_order.status == 'pending' %}
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-clock me-1"></i>待支付
+                                                    </span>
+                                                    <div class="mt-2">
+                                                        <a href="{{ url_for('payment_page', submission_id=submission.id) }}" 
+                                                           class="btn btn-sm btn-primary">
+                                                            <i class="fas fa-credit-card me-1"></i>去支付
+                                                        </a>
+                                                    </div>
+                                                {% elif payment_order.status == 'failed' %}
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times me-1"></i>支付失败
+                                                    </span>
+                                                {% elif payment_order.status == 'cancelled' %}
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-ban me-1"></i>已取消
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        {% else %}
+                                            <span class="badge bg-secondary">无支付记录</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- 多行文本显示 -->
+                                <div class="border rounded p-3 bg-light" style="min-height: 100px;">
+                                    {% if field_value %}
+                                        {{ field_value|replace('\n', '<br>')|safe }}
+                                    {% else %}
+                                        <span class="text-muted fst-italic">未填写</span>
+                                    {% endif %}
+                                </div>
+                            
+                            {% else %}
+                                <!-- 普通字段显示 -->
+                                <div class="border rounded p-3 bg-light">
+                                    {% if field_value %}
+                                        {{ field_value }}
+                                    {% else %}
+                                        <span class="text-muted fst-italic">未填写</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    <!-- 提交者信息 -->
+                    <hr class="my-4">
+                    <h6 class="fw-bold text-secondary mb-3">
+                        <i class="fas fa-user me-2"></i>提交者信息
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>姓名：</strong>{{ submission.user.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1">
+                                <strong>联系方式：</strong>
+                                {% if submission.user.email %}
+                                    {{ submission.user.email }}
+                                {% elif submission.user.phone %}
+                                    {{ submission.user.phone }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        提交ID: {{ submission.id }} | 最后更新: {{ submission.submitted_at | local_time }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.file-item {
+    transition: all 0.3s ease;
+}
+
+.file-item:hover {
+    background-color: #e3f2fd !important;
+    border-color: #2196f3 !important;
+}
+
+.form-group .border {
+    transition: border-color 0.3s ease;
+}
+
+.form-group:hover .border {
+    border-color: #0d6efd !important;
+}
+
+.badge {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem;
+}
+
+.payment-info {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6 !important;
+    transition: all 0.3s ease;
+}
+
+.payment-info:hover {
+    border-color: #0d6efd !important;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+}
+
+.payment-status {
+    text-align: center;
+}
+</style>
+{% endblock %}

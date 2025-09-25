@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}添加收款账户 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('admin_payment_accounts') }}" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="mb-1">添加收款账户</h2>
+                    <p class="text-muted mb-0">配置用户支付时的收款方式</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <form method="POST" id="createAccountForm">
+                <!-- 基本信息 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>基本信息
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="account_name" class="form-label fw-bold">账户名称 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control form-control-lg" id="account_name" 
+                                       name="account_name" placeholder="例如：主要收款账户" required>
+                                <div class="form-text">用于内部识别的账户名称</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="account_type" class="form-label fw-bold">账户类型 <span class="text-danger">*</span></label>
+                                <select class="form-select form-select-lg" id="account_type" name="account_type" 
+                                        onchange="updateAccountTypeFields()" required>
+                                    <option value="">请选择账户类型</option>
+                                    <option value="wechat_pay">微信收款</option>
+                                    <option value="alipay">支付宝收款</option>
+                                    <option value="bank_card">银行卡</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="account_holder" class="form-label fw-bold">收款人姓名 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-lg" id="account_holder" 
+                                   name="account_holder" placeholder="请输入真实姓名" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账户信息 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-credit-card me-2"></i>账户信息
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label for="account_number" class="form-label fw-bold">
+                                <span id="account_number_label">账户号码</span> <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="account_number" 
+                                   name="account_number" required>
+                            <div class="form-text" id="account_number_help">请输入正确的账户号码</div>
+                        </div>
+                        
+                        <!-- 银行卡专用字段 -->
+                        <div id="bankCardFields" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="bank_name" class="form-label fw-bold">银行名称 <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-lg" id="bank_name" name="bank_name">
+                                        <option value="">请选择银行</option>
+                                        <option value="中国工商银行">中国工商银行</option>
+                                        <option value="中国建设银行">中国建设银行</option>
+                                        <option value="中国农业银行">中国农业银行</option>
+                                        <option value="中国银行">中国银行</option>
+                                        <option value="交通银行">交通银行</option>
+                                        <option value="招商银行">招商银行</option>
+                                        <option value="中信银行">中信银行</option>
+                                        <option value="光大银行">光大银行</option>
+                                        <option value="华夏银行">华夏银行</option>
+                                        <option value="民生银行">民生银行</option>
+                                        <option value="广发银行">广发银行</option>
+                                        <option value="平安银行">平安银行</option>
+                                        <option value="浦发银行">浦发银行</option>
+                                        <option value="兴业银行">兴业银行</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="bank_branch" class="form-label fw-bold">开户行</label>
+                                    <input type="text" class="form-control form-control-lg" id="bank_branch" 
+                                           name="bank_branch" placeholder="例如：xx支行">
+                                    <div class="form-text">可选，建议填写具体开户网点</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备注信息 -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-info text-white py-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sticky-note me-2"></i>备注信息
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label fw-bold">备注</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                      placeholder="可选，添加关于此账户的额外说明"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-save me-2"></i>保存收款账户
+                    </button>
+                    <a href="{{ url_for('admin_payment_accounts') }}" class="btn btn-outline-secondary btn-lg px-5 ms-3">
+                        <i class="fas fa-times me-2"></i>取消
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.account-type-preview {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+</style>
+
+<script>
+// 根据账户类型更新相关字段
+function updateAccountTypeFields() {
+    const accountType = document.getElementById('account_type').value;
+    const bankCardFields = document.getElementById('bankCardFields');
+    const accountNumberLabel = document.getElementById('account_number_label');
+    const accountNumberHelp = document.getElementById('account_number_help');
+    const accountNumberInput = document.getElementById('account_number');
+    
+    // 重置字段
+    bankCardFields.style.display = 'none';
+    document.getElementById('bank_name').required = false;
+    
+    switch(accountType) {
+        case 'wechat_pay':
+            accountNumberLabel.textContent = '微信号/手机号';
+            accountNumberHelp.textContent = '请输入微信号或绑定的手机号';
+            accountNumberInput.placeholder = '例如：wxid_xxx 或 13800138000';
+            break;
+            
+        case 'alipay':
+            accountNumberLabel.textContent = '支付宝账号';
+            accountNumberHelp.textContent = '请输入支付宝账号（手机号或邮箱）';
+            accountNumberInput.placeholder = '例如：13800138000 或 user@example.com';
+            break;
+            
+        case 'bank_card':
+            accountNumberLabel.textContent = '银行卡号';
+            accountNumberHelp.textContent = '请输入完整的银行卡号（16-19位数字）';
+            accountNumberInput.placeholder = '例如：6225880123456789';
+            bankCardFields.style.display = 'block';
+            document.getElementById('bank_name').required = true;
+            break;
+            
+        default:
+            accountNumberLabel.textContent = '账户号码';
+            accountNumberHelp.textContent = '请输入正确的账户号码';
+            accountNumberInput.placeholder = '';
+    }
+}
+
+// 表单提交验证
+document.getElementById('createAccountForm').addEventListener('submit', function(e) {
+    const accountType = document.getElementById('account_type').value;
+    const accountNumber = document.getElementById('account_number').value;
+    
+    // 银行卡号验证
+    if (accountType === 'bank_card') {
+        const bankName = document.getElementById('bank_name').value;
+        if (!bankName) {
+            e.preventDefault();
+            alert('请选择银行名称');
+            return false;
+        }
+        
+        // 简单的银行卡号格式验证
+        if (!/^\d{16,19}$/.test(accountNumber.replace(/\s/g, ''))) {
+            e.preventDefault();
+            alert('请输入正确的银行卡号（16-19位数字）');
+            return false;
+        }
+    }
+    
+    // 手机号验证（微信和支付宝）
+    if ((accountType === 'wechat_pay' || accountType === 'alipay') && /^\d+$/.test(accountNumber)) {
+        if (!/^1[3-9]\d{9}$/.test(accountNumber)) {
+            e.preventDefault();
+            alert('请输入正确的手机号格式');
+            return false;
+        }
+    }
+    
+    // 邮箱验证（支付宝）
+    if (accountType === 'alipay' && accountNumber.includes('@')) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(accountNumber)) {
+            e.preventDefault();
+            alert('请输入正确的邮箱格式');
+            return false;
+        }
+    }
+    
+    // 提交按钮状态
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>保存中...';
+});
+
+// 格式化银行卡号输入（添加空格分隔）
+document.getElementById('account_number').addEventListener('input', function(e) {
+    const accountType = document.getElementById('account_type').value;
+    if (accountType === 'bank_card') {
+        let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+        value = value.replace(/(.{4})/g, '$1 ').trim();
+        e.target.value = value;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,221 @@
+<!-- 系统统计模态框 -->
+<div class="modal fade" id="systemStatsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar me-2"></i>系统统计报表
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="systemStatsContent">
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">加载统计数据中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 系统导出模态框 -->
+<div class="modal fade" id="systemExportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-export me-2"></i>系统数据导出
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="systemExportForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">导出类型</label>
+                        <select class="form-select" id="exportType" name="export_type">
+                            <option value="all">所有数据</option>
+                            <option value="users">用户数据</option>
+                            <option value="forms">表单数据</option>
+                            <option value="submissions">提交数据</option>
+                            <option value="statistics">统计报表</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">文件格式</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="formatExcel" value="excel" checked>
+                            <label class="form-check-label" for="formatExcel">
+                                <i class="fas fa-file-excel text-success me-2"></i>Excel (.xlsx)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="formatCSV" value="csv">
+                            <label class="form-check-label" for="formatCSV">
+                                <i class="fas fa-file-csv text-info me-2"></i>CSV (.csv)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="format" id="formatZip" value="zip">
+                            <label class="form-check-label" for="formatZip">
+                                <i class="fas fa-file-archive text-warning me-2"></i>ZIP 包 (.zip)
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" onclick="startSystemExport()">
+                    <i class="fas fa-download me-2"></i>开始导出
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 安全检查结果模态框 -->
+<div class="modal fade" id="securityCheckModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-shield-alt me-2"></i>安全检查报告
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="securityCheckContent">
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">运行安全检查中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 备份创建模态框 -->
+<div class="modal fade" id="backupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-save me-2"></i>创建系统备份
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="backupForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">备份内容</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeDatabase" name="include_database" checked>
+                            <label class="form-check-label" for="includeDatabase">
+                                <i class="fas fa-database me-2"></i>数据库
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeUploads" name="include_uploads" checked>
+                            <label class="form-check-label" for="includeUploads">
+                                <i class="fas fa-folder me-2"></i>上传文件
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeConfig" name="include_config">
+                            <label class="form-check-label" for="includeConfig">
+                                <i class="fas fa-cog me-2"></i>配置信息
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        备份将包含选中的所有数据，请确保有足够的存储空间。
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" onclick="createSystemBackup()">
+                    <i class="fas fa-save me-2"></i>创建备份
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 备份列表模态框 -->
+<div class="modal fade" id="backupListModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-list me-2"></i>备份文件管理
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="backupListContent">
+                <div class="text-center py-4">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <p class="mt-2">加载备份列表中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 数据导入模态框 -->
+<div class="modal fade" id="dataImportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-import me-2"></i>数据导入
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dataImportForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">导入类型</label>
+                        <select class="form-select" id="importType" name="import_type">
+                            <option value="backup">备份文件 (.zip)</option>
+                            <option value="users">用户数据 (.csv/.xlsx)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">选择文件</label>
+                        <input type="file" class="form-control" id="importFile" name="import_file" accept=".zip,.csv,.xlsx">
+                        <div class="form-text">ZIP格式用于备份恢复，CSV/Excel用于用户数据导入</div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>注意：</strong>数据导入可能会覆盖现有数据，请在操作前先创建备份。
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="startDataImport()">
+                    <i class="fas fa-upload me-2"></i>开始导入
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.security-score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid currentColor;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+</style>

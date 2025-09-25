@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}移动端优化测试 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 移动端优化展示页面 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-mobile-alt me-2"></i>移动端显示优化
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="lead">本页面展示了针对手机和平板设备的界面优化效果。</p>
+                    
+                    <!-- 按钮展示 -->
+                    <div class="mb-4">
+                        <h5>触摸友好的按钮</h5>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-primary btn-click-effect">
+                                <i class="fas fa-check me-2"></i>主要按钮
+                            </button>
+                            <button class="btn btn-secondary">
+                                <i class="fas fa-edit me-2"></i>次要按钮
+                            </button>
+                            <button class="btn btn-success">
+                                <i class="fas fa-download me-2"></i>下载
+                            </button>
+                            <button class="btn btn-warning">
+                                <i class="fas fa-star me-2"></i>收藏
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 表单展示 -->
+                    <div class="mb-4">
+                        <h5>优化的表单控件</h5>
+                        <form>
+                            <div class="mb-3">
+                                <label for="testInput" class="form-label">文本输入</label>
+                                <input type="text" class="form-control" id="testInput" placeholder="触摸友好的输入框">
+                            </div>
+                            <div class="mb-3">
+                                <label for="testSelect" class="form-label">下拉选择</label>
+                                <select class="form-select" id="testSelect">
+                                    <option value="">请选择选项</option>
+                                    <option value="1">选项一</option>
+                                    <option value="2">选项二</option>
+                                    <option value="3">选项三</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="testTextarea" class="form-label">文本区域</label>
+                                <textarea class="form-control" id="testTextarea" rows="3" placeholder="自适应高度的文本区域"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="testCheck">
+                                    <label class="form-check-label" for="testCheck">
+                                        更大的复选框，易于点击
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计卡片展示 -->
+    <div class="row mb-4">
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 card-stack">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-primary mx-auto mb-2">
+                        <i class="fas fa-users text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-primary">1,234</h4>
+                    <p class="text-muted mb-0">总用户</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 card-stack">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-success mx-auto mb-2">
+                        <i class="fas fa-file-alt text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-success">567</h4>
+                    <p class="text-muted mb-0">表单数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 card-stack">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-warning mx-auto mb-2">
+                        <i class="fas fa-paper-plane text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-warning">8,901</h4>
+                    <p class="text-muted mb-0">提交数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100 card-stack">
+                <div class="card-body text-center">
+                    <div class="stat-icon bg-info mx-auto mb-2">
+                        <i class="fas fa-chart-line text-white"></i>
+                    </div>
+                    <h4 class="fw-bold text-info">95%</h4>
+                    <p class="text-muted mb-0">满意度</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 表格展示 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">响应式表格演示</h5>
+                    <small class="text-muted">在移动设备上会自动转换为卡片布局</small>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>邮箱</th>
+                                    <th>电话</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>张三</td>
+                                    <td>zhangsan@example.com</td>
+                                    <td>13800138000</td>
+                                    <td><span class="badge bg-success">活跃</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>李四</td>
+                                    <td>lisi@example.com</td>
+                                    <td>13900139000</td>
+                                    <td><span class="badge bg-warning">待审核</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>王五</td>
+                                    <td>wangwu@example.com</td>
+                                    <td>13700137000</td>
+                                    <td><span class="badge bg-secondary">禁用</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 提示信息 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle me-2"></i>移动端优化特性</h6>
+                <ul class="mb-0">
+                    <li>触摸友好的按钮和控件（最小44px触摸目标）</li>
+                    <li>表格在移动端自动转换为卡片布局</li>
+                    <li>更大的表单控件和更好的间距</li>
+                    <li>优化的导航栏折叠体验</li>
+                    <li>改进的文字大小和行高</li>
+                    <li>流畅的动画和过渡效果</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 为测试页面添加页面转换动画
+    $('.container').addClass('page-transition');
+    
+    // 为统计卡片添加动画
+    $('.card-stack .card').each(function(index) {
+        $(this).css('animation-delay', (index * 0.1) + 's');
+        $(this).addClass('fade-in');
+    });
+    
+    // 演示按钮点击效果
+    $('.btn-click-effect').on('click', function() {
+        $(this).addClass('pulse');
+        setTimeout(() => {
+            $(this).removeClass('pulse');
+        }, 600);
+    });
+    
+    // 演示表单验证动画
+    $('form input, form select, form textarea').on('blur', function() {
+        if ($(this).val().trim() === '') {
+            $(this).addClass('shake');
+            setTimeout(() => {
+                $(this).removeClass('shake');
+            }, 500);
+        }
+    });
+});
+</script>
+{% endblock %}

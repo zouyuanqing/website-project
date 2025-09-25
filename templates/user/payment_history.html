@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}支付历史 - 信息收集系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 页面标题 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-credit-card text-primary me-3" style="font-size: 2.5rem;"></i>
+                    <div>
+                        <h2 class="mb-1">支付历史</h2>
+                        <p class="text-muted mb-0">查看所有支付记录和订单状态</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>返回个人中心
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-shopping-cart text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-primary">{{ payment_stats.total_payments }}</h4>
+                    <p class="text-muted mb-0">总订单数</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-check-double text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-success">{{ payment_stats.paid_orders }}</h4>
+                    <p class="text-muted mb-0">已支付</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-clock text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-warning">{{ payment_stats.pending_payments }}</h4>
+                    <p class="text-muted mb-0">待支付</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-3">
+                        <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="fas fa-yen-sign text-white" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold text-danger">¥{{ "%.2f"|format(payment_stats.total_paid_amount) }}</h4>
+                    <p class="text-muted mb-0">已支付金额</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选器 -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">支付状态</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">全部状态</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>待支付</option>
+                        <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>处理中</option>
+                        <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>已支付</option>
+                        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>支付失败</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>已取消</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="payment_type" class="form-label">支付方式</label>
+                    <select name="payment_type" id="payment_type" class="form-select">
+                        <option value="">全部方式</option>
+                        <option value="wechat_pay" {% if payment_type_filter == 'wechat_pay' %}selected{% endif %}>微信支付</option>
+                        <option value="alipay" {% if payment_type_filter == 'alipay' %}selected{% endif %}>支付宝</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>筛选
+                    </button>
+                    <a href="{{ url_for('user_payment_history') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-refresh me-1"></i>重置
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 支付记录列表 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="fas fa-list me-2"></i>支付记录
+                {% if payment_orders.total > 0 %}
+                    <span class="badge bg-primary ms-2">{{ payment_orders.total }}</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if payment_orders.items %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>订单号</th>
+                                <th>关联表单</th>
+                                <th>金额</th>
+                                <th>支付方式</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>支付时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in payment_orders.items %}
+                            <tr>
+                                <td>
+                                    <code class="small">{{ order.order_no }}</code>
+                                    {% if order.trade_no %}
+                                        <br><small class="text-muted">交易号: {{ order.trade_no[:16] }}...</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong>{{ order.submission.form.title }}</strong>
+                                        <br><small class="text-muted">字段: {{ order.field_name }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-danger">¥{{ "%.2f"|format(order.amount) }}</span>
+                                </td>
+                                <td>
+                                    {% if order.payment_type == 'wechat_pay' %}
+                                        <span class="badge bg-success">
+                                            <i class="fab fa-weixin me-1"></i>微信支付
+                                        </span>
+                                    {% elif order.payment_type == 'alipay' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fab fa-alipay me-1"></i>支付宝
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ order.payment_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.status == 'paid' %}
+                                        <span class="badge bg-success">已支付</span>
+                                    {% elif order.status == 'pending' %}
+                                        <span class="badge bg-warning">待支付</span>
+                                    {% elif order.status == 'processing' %}
+                                        <span class="badge bg-info">处理中</span>
+                                    {% elif order.status == 'failed' %}
+                                        <span class="badge bg-danger">支付失败</span>
+                                    {% elif order.status == 'cancelled' %}
+                                        <span class="badge bg-secondary">已取消</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ order.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ order.created_at | local_time }}</small>
+                                </td>
+                                <td>
+                                    {% if order.paid_at %}
+                                        <small class="text-success">{{ order.paid_at | local_time }}</small>
+                                    {% else %}
+                                        <small class="text-muted">-</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <a href="{{ url_for('payment_page', submission_id=order.submission_id) }}" 
+                                           class="btn btn-sm btn-outline-primary">继续支付</a>
+                                    {% elif order.status == 'paid' %}
+                                        <a href="{{ url_for('payment_success', order_id=order.id) }}"
+                                           class="btn btn-sm btn-outline-success">查看详情</a>
+                                    {% else %}
+                                        <a href="{{ url_for('view_submission', submission_id=order.submission_id) }}"
+                                           class="btn btn-sm btn-outline-secondary">查看提交</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                {% if payment_orders.pages > 1 %}
+                <nav aria-label="支付记录分页">
+                    <ul class="pagination justify-content-center mt-4">
+                        {% if payment_orders.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('user_payment_history', page=payment_orders.prev_num, status=status_filter, payment_type=payment_type_filter) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                        {% endif %}
+
+                        {% for page_num in payment_orders.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != payment_orders.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('user_payment_history', page=page_num, status=status_filter, payment_type=payment_type_filter) }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">…</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if payment_orders.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('user_payment_history', page=payment_orders.next_num, status=status_filter, payment_type=payment_type_filter) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-credit-card text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="text-muted mt-3">暂无支付记录</h5>
+                    <p class="text-muted">当您提交包含支付字段的表单后，支付记录将在这里显示</p>
+                    <a href="{{ url_for('available_forms') }}" class="btn btn-primary mt-3">
+                        <i class="fas fa-list-ul me-2"></i>查看可用表单
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
