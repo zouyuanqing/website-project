@@ -9,8 +9,13 @@ class Config:
     # 安全配置
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-change-in-production'
     
-    # 数据库配置
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///form_system.db'
+    # 数据库配置 - 支持Heroku PostgreSQL
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+        # 修复Heroku PostgreSQL URL格式问题
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL or os.environ.get('DATABASE_URL') or 'sqlite:///form_system.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # 文件上传设置
@@ -28,6 +33,12 @@ class Config:
     # 应用环境
     FLASK_ENV = os.environ.get('FLASK_ENV') or 'development'
     DEBUG = os.environ.get('DEBUG', 'True').lower() in ['true', '1', 'yes']
+    
+    # Heroku特定配置
+    if 'DYNO' in os.environ:
+        # 在Heroku上运行
+        FLASK_ENV = 'production'
+        DEBUG = False
     
     @staticmethod
     def validate_production_config():

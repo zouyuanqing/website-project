@@ -45,5 +45,17 @@ with application.app_context():
     except Exception as e:
         print(f"应用初始化失败: {e}")
 
+# Heroku特定设置
+if 'DYNO' in os.environ:
+    # 在Heroku上运行，设置日志输出到stdout
+    import logging
+    from logging import StreamHandler
+    handler = StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    application.logger.addHandler(handler)
+    application.logger.setLevel(logging.INFO)
+
 if __name__ == "__main__":
-    application.run(host='0.0.0.0', port=5000, debug=False)
+    # 获取端口（Heroku动态分配）
+    port = int(os.environ.get('PORT', 5000))
+    application.run(host='0.0.0.0', port=port, debug=False)
